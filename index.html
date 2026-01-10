@@ -1162,10 +1162,21 @@
         }
 
         function openShiftModal(day = null) {
-            // Populate employee dropdown
+            console.log('Opening shift modal...');
+            
+            // Populate employee dropdown immediately
             const dropdown = document.getElementById('shiftWithEmp');
+            console.log('Dropdown element:', dropdown);
+            
             if (dropdown) {
-                dropdown.innerHTML = '<option value="">Select Employee</option>';
+                // Clear existing options
+                dropdown.innerHTML = '';
+                
+                // Add default option
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Select Employee';
+                dropdown.appendChild(defaultOption);
                 
                 // Get all other employees except current user
                 const otherEmployees = employees.filter(emp => 
@@ -1173,11 +1184,20 @@
                     emp.role === 'employee'
                 );
                 
+                console.log('Other employees:', otherEmployees);
+                
+                // Add employee options
                 otherEmployees.forEach(emp => {
-                    dropdown.innerHTML += `<option value="${emp.id}">${emp.id} - ${emp.name}</option>`;
+                    const option = document.createElement('option');
+                    option.value = emp.id;
+                    option.textContent = `${emp.id} - ${emp.name}`;
+                    dropdown.appendChild(option);
                 });
+                
+                console.log('Dropdown populated with', dropdown.options.length, 'options');
             }
             
+            // Show the modal
             document.getElementById('shiftModal').style.display = 'block';
         }
 
