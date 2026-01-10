@@ -351,6 +351,85 @@
             
             /* Profile image upload fix */
             .input-group input[type="file"] {
+                padding: 10px;
+            }
+        }
+        
+        /* Notification Styles */
+        .notification-badge {
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 5px;
+            display: none;
+        }
+
+        .notification-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .notification-card:hover {
+            background: #e8f4f8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .notification-card.unread {
+            border-left-color: #e74c3c;
+            background: #fff5f5;
+        }
+
+        .notification-card.read {
+            opacity: 0.8;
+        }
+
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .notification-header h4 {
+            color: #2c3e50;
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .notification-date {
+            color: #7f8c8d;
+            font-size: 12px;
+        }
+
+        .notification-message {
+            color: #34495e;
+            font-size: 14px;
+            line-height: 1.4;
+            margin: 0;
+        }
+
+        .unread-dot {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 8px;
+            height: 8px;
+            background: #e74c3c;
+            border-radius: 50%;
+        }
+        
+        @media (max-width: 480px) {
+            .input-group input[type="file"] {
                 padding: 12px 8px;
                 border: 2px dashed #3498db;
                 background: #f8f9fa;
@@ -379,7 +458,6 @@
                 font-size: 1em;
             }
         }
-    </style>
     </style>
 </head>
 <body>
@@ -709,7 +787,7 @@
         let sessionTimeout = null;
         const SESSION_DURATION = 3 * 60 * 1000; // 3 minutes in milliseconds
         let employees = [
-            { id: 'ADMIN01', name: 'Manager', password: 'admin123', role: 'admin' },
+            { id: 'ADMIN01', name: 'Manager', password: 'TollPlaza@2025', role: 'admin' },
             { id: 'AR0246', name: 'KARTIK RAJUKLE', password: '121212', role: 'employee' },
             { id: 'AR0230', name: 'AKASH PALGHAN', password: '121212', role: 'employee' },
             { id: 'AR0248', name: 'ROSHAN SARODE', password: '121212', role: 'employee' },
