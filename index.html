@@ -1,0 +1,1912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IC 07 GAVNER TOLL PLAZA - Employee Portal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            object-fit: cover;
+        }
+
+        .video-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.3);
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-center {
+            text-align: center;
+            flex: 1;
+        }
+
+        .header-center h1 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .header-center h2 {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .nav-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .profile-btn {
+            background: rgba(255,255,255,0.2);
+            
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .profile-dropdown {
+            position: absolute;
+            top: calc(100% + 5px);
+            right: 50xp;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            min-width: 180px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .profile-dropdown.show {
+            display: block;
+        }
+
+        .profile-dropdown-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            color: #2c3e50;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .profile-dropdown-item:hover {
+            background: #f8f9fa;
+        }
+
+        .login-card {
+            max-width: 400px;
+            margin: 0 auto 40px;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .dashboard {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .input-group input, .input-group textarea, .input-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus, .input-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .error { color: #e74c3c; text-align: center; margin-top: 10px; }
+        .success { color: #27ae60; text-align: center; margin-top: 10px; }
+
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tab.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .roster-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .roster-table th, .roster-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .roster-table th {
+            background: #34495e;
+            color: white;
+            font-weight: 600;
+        }
+
+        .roster-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-approved { color: #27ae60; font-weight: bold; }
+        .status-pending { color: #f39c12; font-weight: bold; }
+        .status-rejected { color: #e74c3c; font-weight: bold; }
+
+        .request-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close:hover { color: #000; }
+
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .admin-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+        }
+
+        @media (max-width: 768px) {
+            .nav-tabs { flex-direction: column; }
+            .admin-grid { grid-template-columns: 1fr; }
+            .roster-table { font-size: 14px; }
+            .roster-table th, .roster-table td { padding: 10px 8px; }
+            
+            /* Mobile login fixes */
+            .login-card {
+                margin: 20px 10px;
+                padding: 30px 20px;
+            }
+            
+            .input-group input {
+                font-size: 16px;
+                padding: 14px 16px;
+                -webkit-appearance: none;
+                appearance: none;
+                border-radius: 8px;
+            }
+            
+            .btn {
+                font-size: 16px;
+                padding: 16px;
+                -webkit-appearance: none;
+                appearance: none;
+                border-radius: 8px;
+            }
+            
+            /* Profile image upload fix */
+            .input-group input[type="file"] {
+                padding: 12px 8px;
+                border: 2px dashed #3498db;
+                background: #f8f9fa;
+                cursor: pointer;
+            }
+            
+            /* Modal fixes for mobile */
+            .modal-content {
+                width: 95%;
+                max-width: 95vw;
+                margin: 20px auto;
+                padding: 20px;
+            }
+            
+            /* Header mobile layout */
+            .header {
+                flex-wrap: wrap;
+                padding: 15px;
+            }
+            
+            .header-center h1 {
+                font-size: 1.4em;
+            }
+            
+            .header-center h2 {
+                font-size: 1em;
+            }
+        }
+    </style>
+    </style>
+</head>
+<body>
+    <video class="video-background" autoplay muted loop>
+        <source src="background-video.mp4" type="video/mp4">
+        <source src="background-video.webm" type="video/webm">
+    </video>
+    <div class="video-overlay"></div>
+    
+    <div class="container">
+        <!-- Header -->
+        <div class="header" id="header" style="display: none;">
+            <div style="display: flex; align-items: center;">
+                <img id="headerProfileImage" src="" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 15px; display: none; border: 2px solid white;">
+                <div>
+                    <div style="font-size: 15px; opacity: 0.8;">Welcome</div>
+                    <div id="headerUserName" style="font-weight: bold;"></div>
+                </div>
+            </div>
+            <div class="header-center">
+                <h1 id="welcomeHeader">IC 07 GAVNER TOLL PLAZA</h1>
+                <h2>Employee Portal</h2>
+                <p id="userRole"></p>
+            </div>
+            <div style="position: relative;">
+                <button class="profile-btn" onclick="toggleProfileDropdown()">
+                        👤 Profile ▼
+                    </button>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <div class="profile-dropdown-item" onclick="editProfile()">✏️ Edit Profile</div>
+                        <div class="profile-dropdown-item" onclick="changePassword()">🔒 Change Password</div>
+                        <div class="profile-dropdown-item" onclick="logout()">🚪 Logout</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Form -->
+        <div id="loginSection" class="login-card">
+            <h2>👋 Employee Login</h2>
+            <form id="loginForm">
+                <div class="input-group">
+                    <label>Employee ID</label>
+                    <input type="text" id="empId" placeholder="Emp ID" required>
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="password" placeholder="Password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
+                <div id="loginError" class="error"></div>
+            </form>
+            <div style="text-align: center; margin-top: 20px; font-size: 14px; color: #7f8c8d;">
+                <p><strong>Trouble To Login: Contact To Admin</strong> </p>
+                <p><strong>Employees:</strong> Do Not Share Password.</p>
+                
+            </div>
+        </div>
+
+        <!-- Employee Dashboard -->
+        <div id="employeeDashboard" class="dashboard" style="display: none;">
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showEmployeeTab('empRosterTab')">📅 My Roster</button>
+                <button class="nav-tab" onclick="showEmployeeTab('empShiftTab')">🔄 Shift Exchange</button>
+                <button class="nav-tab" onclick="showEmployeeTab('empLeaveTab')">📋 Leave</button>
+                <button class="nav-tab" onclick="showEmployeeTab('empNotificationTab')">🔔 Notifications</button>
+            </div>
+            
+            <!-- Employee Roster Tab -->
+            <div id="empRosterTab" class="tab-content active">
+                <h3>📅 My Monthly Roster</h3>
+                <div id="empRosterContent"></div>
+            </div>
+
+            <!-- Employee Shift Exchange Tab -->
+            <div id="empShiftTab" class="tab-content">
+                <h3>🔄 Shift Exchange Requests</h3>
+                <button class="btn btn-primary" onclick="openShiftModal()">➕ New Shift Exchange</button>
+                
+                <h4 style="margin-top: 30px;">📤 My Requests</h4>
+                <div id="empShiftRequests"></div>
+                
+                <h4 style="margin-top: 30px;">📥 Requests for Me</h4>
+                <div id="empIncomingRequests"></div>
+            </div>
+
+            <!-- Employee Leave Tab -->
+            <div id="empLeaveTab" class="tab-content">
+                <h3>📋 My Leave Requests</h3>
+                <button class="btn btn-primary" onclick="openLeaveModal()">➕ New Leave Request</button>
+                <div id="empLeaveRequests"></div>
+            </div>
+
+            <!-- Employee Notifications Tab -->
+            <div id="empNotificationTab" class="tab-content">
+                <h3>🔔 Notifications from Head Office</h3>
+                <div id="empNotifications"></div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="adminDashboard" class="dashboard" style="display: none;">
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showAdminTab('adminRosterTab')">📊 Upload Roster</button>
+                <button class="nav-tab" onclick="showAdminTab('adminShiftTab')">🔄 Shift Requests</button>
+                <button class="nav-tab" onclick="showAdminTab('adminLeaveTab')">📋 Leave Requests</button>
+                <button class="nav-tab" onclick="showAdminTab('adminEmpTab')">👥 Employees</button>
+                <button class="nav-tab" onclick="showAdminTab('adminNotifyTab')">📢 Send Notifications</button>
+            </div>
+
+            <!-- Admin Roster Tab -->
+            <div id="adminRosterTab" class="tab-content active">
+                <h3>📊 Upload Monthly Roster Excel File</h3>
+                <div style="margin-bottom: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                    <p style="margin-bottom: 15px; color: #2c3e50;"><strong>Instructions:</strong></p>
+                    <ul style="margin-bottom: 15px; color: #7f8c8d;">
+                        <li>Row 1: Employee_Name | 1 | 2 | 3 | ... | 31 (dates)</li>
+                        <li>Row 2: Employee_Name | MON | TUE | WED | ... (days)</li>
+                        <li>Row 3+: Employee names in first column, shifts in date columns</li>
+                        <li>Shifts: A, B, C, W/O</li>
+                        <li>Employee names must match system names exactly</li>
+                    </ul>
+                    <input type="file" id="rosterFile" accept=".xlsx,.xls" style="margin-bottom: 10px;">
+                    <button class="btn btn-success" onclick="uploadRosterFile()" style="width: auto; padding: 12px 24px;">📤 Upload Roster</button>
+                </div>
+                <div id="adminRoster"></div>
+            </div>
+
+            <!-- Admin Shift Tab -->
+            <div id="adminShiftTab" class="tab-content">
+                <h3>🔄 All Shift Exchange Requests</h3>
+                <div id="adminShiftRequests"></div>
+            </div>
+
+            <!-- Admin Leave Tab -->
+            <div id="adminLeaveTab" class="tab-content">
+                <h3>📋 All Leave Requests</h3>
+                <div id="adminLeaveRequests"></div>
+            </div>
+
+            <!-- Admin Employee Tab -->
+            <div id="adminEmpTab" class="tab-content">
+                <h3>👥 Manage Employees</h3>
+                <div style="margin-bottom: 20px;">
+                    <input type="text" id="newEmpId" placeholder="Employee ID" style="width: 120px; padding: 8px; margin-right: 10px;">
+                    <input type="text" id="newEmpName" placeholder="Name" style="width: 150px; padding: 8px; margin-right: 10px;">
+                    <input type="text" id="newEmpDesignation" placeholder="Designation" style="width: 120px; padding: 8px; margin-right: 10px;">
+                    <input type="text" id="newEmpContact" placeholder="Contact" style="width: 120px; padding: 8px; margin-right: 10px;">
+                    <input type="password" id="newEmpPass" placeholder="Password" style="width: 120px; padding: 8px; margin-right: 10px;">
+                    <button class="btn btn-success" onclick="addEmployee()" style="width: auto; padding: 8px 16px;">Add</button>
+                </div>
+                <div id="adminEmployees"></div>
+            </div>
+
+            <!-- Admin Notification Tab -->
+            <div id="adminNotifyTab" class="tab-content">
+                <h3>📢 Send Notifications to Employees</h3>
+                <div style="margin-bottom: 20px;">
+                    <textarea id="notificationText" placeholder="Enter notification message..." rows="4" style="width: 100%; padding: 12px; border: 2px solid #ecf0f1; border-radius: 10px; margin-bottom: 10px;"></textarea>
+                    <button class="btn btn-primary" onclick="sendNotification()" style="width: auto; padding: 12px 24px;">📢 Send to All Employees</button>
+                </div>
+                <div id="sentNotifications"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="shiftModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>🔄 Shift Exchange Request</h3>
+            <form id="shiftForm">
+                <input type="hidden" id="shiftRosterId">
+                <div class="input-group">
+                    <label>Date</label>
+                    <input type="date" id="shiftDate" required>
+                </div>
+                <div class="input-group">
+                    <label>My Shift</label>
+                    <select id="shiftMyShift" required>
+                        <option value="">Select Your Shift</option>
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Exchange with Employee</label>
+                    <select id="shiftWithEmp" required onchange="updateExchangeShift()">
+                        <option value="">Select Employee</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>To Shift</label>
+                    <select id="addShift" required>
+                        <option value="">Select Shift to Exchange</option>
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                    </select>
+                </div>
+                <div class="input-group" id="exchangeShiftGroup" style="display: none;">
+                    <label>Their Shift</label>
+                    <input type="text" id="shiftTheirShift" readonly style="background: #f8f9fa;">
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Request</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="leaveModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>📋 Leave Request</h3>
+            <form id="leaveForm">
+                <div class="input-group">
+                    <label>From Date</label>
+                    <input type="date" id="leaveFromDate" required>
+                </div>
+                <div class="input-group">
+                    <label>To Date</label>
+                    <input type="date" id="leaveToDate" required>
+                </div>
+                <div class="input-group">
+                    <label>Number of Days</label>
+                    <input type="number" id="leaveDays" min="1" max="30" readonly>
+                </div>
+                <div class="input-group">
+                    <label>Reason</label>
+                    <textarea id="leaveReason" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Request</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="editEmployeeModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>✏️ Edit Employee</h3>
+            <form id="editEmployeeForm">
+                <input type="hidden" id="editEmpId">
+                <div class="input-group">
+                    <label>Employee ID</label>
+                    <input type="text" id="editEmpIdDisplay" readonly style="background: #f8f9fa;">
+                </div>
+                <div class="input-group">
+                    <label>Employee Name</label>
+                    <input type="text" id="editEmpName" required>
+                </div>
+                <div class="input-group">
+                    <label>Designation</label>
+                    <input type="text" id="editEmpDesignation" required>
+                </div>
+                <div class="input-group">
+                    <label>Contact Number</label>
+                    <input type="text" id="editEmpContact" placeholder="Enter contact number">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="editEmpPassword" required>
+                </div>
+                <button type="submit" class="btn btn-success">Update Employee</button>
+                <button type="button" class="btn btn-danger" onclick="closeModal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="editProfileModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>✏️ Edit My Profile</h3>
+            <form id="editProfileForm">
+                <div class="input-group">
+                    <label>Employee ID</label>
+                    <input type="text" id="profileEmpId" readonly style="background: #f8f9fa;">
+                </div>
+                <div class="input-group">
+                    <label>Employee Name</label>
+                    <input type="text" id="profileEmpName" readonly style="background: #f8f9fa;">
+                </div>
+                <div class="input-group">
+                    <label>Contact Number</label>
+                    <input type="text" id="profileEmpContact" placeholder="Enter contact number">
+                </div>
+                <div class="input-group">
+                    <label>Display Picture</label>
+                    <input type="file" id="profilePicture" accept="image/*">
+                    <div id="currentPicture" style="margin-top: 10px;"></div>
+                </div>
+                <button type="submit" class="btn btn-success">Update Profile</button>
+                <button type="button" class="btn btn-danger" onclick="closeModal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        // Data Storage
+        let currentUser = null;
+        let sessionTimeout = null;
+        const SESSION_DURATION = 3 * 60 * 1000; // 3 minutes in milliseconds
+        let employees = [
+            { id: 'ADMIN01', name: 'Manager', password: 'admin123', role: 'admin' },
+            { id: 'AR0246', name: 'KARTIK RAJUKLE', password: '121212', role: 'employee' },
+            { id: 'AR0230', name: 'AKASH PALGHAN', password: '121212', role: 'employee' },
+            { id: 'AR0248', name: 'ROSHAN SARODE', password: '121212', role: 'employee' },
+            { id: 'AR0277', name: 'PANKAJ TAMBAKHE', password: '121212', role: 'employee' },
+            { id: 'AR0278', name: 'AKASH JADHAV', password: '121212', role: 'employee' },
+            { id: 'AR0279', name: 'ROHIT SHINDE', password: '121212', role: 'employee' },
+            { id: 'AR0280', name: 'SURESH PATIL', password: '121212', role: 'employee' },
+            { id: 'AR0281', name: 'VIJAY KUMAR', password: '121212', role: 'employee' },
+            { id: 'AR0282', name: 'RAVI SHARMA', password: '121212', role: 'employee' },
+            { id: 'AR0283', name: 'AMIT SINGH', password: '121212', role: 'employee' },
+            { id: 'AR0284', name: 'DEEPAK YADAV', password: '121212', role: 'employee' },
+            { id: 'AR0285', name: 'MANOJ GUPTA', password: '121212', role: 'employee' },
+            { id: 'AR0286', name: 'SANTOSH JOSHI', password: '121212', role: 'employee' },
+            { id: 'AR0287', name: 'GANESH MORE', password: '121212', role: 'employee' }
+        ];
+
+        let monthlyRoster = {
+            'KARTIK RAJKULE': {
+                day1: 'A', day2: 'B', day3: 'W/O', day4: 'C', day5: 'A',
+                day6: 'B', day7: 'W/O', day8: 'C', day9: 'A', day10: 'B',
+                day11: 'W/O', day12: 'C', day13: 'A', day14: 'B', day15: 'W/O',
+                day16: 'C', day17: 'A', day18: 'B', day19: 'W/O', day20: 'C',
+                day21: 'A', day22: 'B', day23: 'W/O', day24: 'C', day25: 'A',
+                day26: 'B', day27: 'W/O', day28: 'C', day29: 'A', day30: 'B', day31: 'W/O'
+            },
+            'AKASH PALGHAN': {
+                day1: 'B', day2: 'C', day3: 'A', day4: 'W/O', day5: 'B',
+                day6: 'C', day7: 'A', day8: 'W/O', day9: 'B', day10: 'C',
+                day11: 'A', day12: 'W/O', day13: 'B', day14: 'C', day15: 'A',
+                day16: 'W/O', day17: 'B', day18: 'C', day19: 'A', day20: 'W/O',
+                day21: 'B', day22: 'C', day23: 'A', day24: 'W/O', day25: 'B',
+                day26: 'C', day27: 'A', day28: 'W/O', day29: 'B', day30: 'C', day31: 'A'
+            },
+            'ROSHAN SARODE': {
+                day1: 'C', day2: 'W/O', day3: 'B', day4: 'A', day5: 'C',
+                day6: 'W/O', day7: 'B', day8: 'A', day9: 'C', day10: 'W/O',
+                day11: 'B', day12: 'A', day13: 'C', day14: 'W/O', day15: 'B',
+                day16: 'A', day17: 'C', day18: 'W/O', day19: 'B', day20: 'A',
+                day21: 'C', day22: 'W/O', day23: 'B', day24: 'A', day25: 'C',
+                day26: 'W/O', day27: 'B', day28: 'A', day29: 'C', day30: 'W/O', day31: 'B'
+            }
+        }; // Sample roster data
+        let shiftRequests = [];
+        let leaveRequests = [];
+        let notifications = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        function initApp() {
+            loadData();
+            checkSessionValidity();
+            if (currentUser && isSessionValid()) {
+                showDashboard();
+                startSessionTimer();
+            } else {
+                if (currentUser) {
+                    currentUser = null;
+                    localStorage.removeItem('currentUser');
+                }
+                document.getElementById('loginSection').style.display = 'block';
+                document.getElementById('employeeDashboard').style.display = 'none';
+                document.getElementById('adminDashboard').style.display = 'none';
+                document.getElementById('header').style.display = 'none';
+                document.getElementById('loginError').textContent = '';
+            }
+            setupEventListeners();
+        }
+
+        function setupEventListeners() {
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('shiftForm').addEventListener('submit', handleShiftSubmit);
+            document.getElementById('leaveForm').addEventListener('submit', handleLeaveSubmit);
+            document.getElementById('editEmployeeForm').addEventListener('submit', handleEditEmployeeSubmit);
+            document.getElementById('editProfileForm').addEventListener('submit', handleEditProfileSubmit);
+            
+            // Auto-calculate leave days
+            document.getElementById('leaveFromDate').addEventListener('change', calculateLeaveDays);
+            document.getElementById('leaveToDate').addEventListener('change', calculateLeaveDays);
+        }
+        
+        function calculateLeaveDays() {
+            const fromDate = document.getElementById('leaveFromDate').value;
+            const toDate = document.getElementById('leaveToDate').value;
+            
+            if (fromDate && toDate) {
+                const from = new Date(fromDate);
+                const to = new Date(toDate);
+                
+                if (to >= from) {
+                    const timeDiff = to.getTime() - from.getTime();
+                    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
+                    document.getElementById('leaveDays').value = daysDiff;
+                } else {
+                    document.getElementById('leaveDays').value = '';
+                    alert('❌ To date must be after from date!');
+                }
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const empId = document.getElementById('empId').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+
+            const user = employees.find(u => u.id === empId && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                currentUser.loginTime = Date.now();
+                saveData();
+                showDashboard();
+                startSessionTimer();
+                errorDiv.textContent = '';
+            } else {
+                errorDiv.textContent = '❌ Invalid Employee ID or Password';
+            }
+        }
+
+        function showReports() {
+            alert('📊 Reports feature coming soon!');
+        }
+
+        function showHelp() {
+            alert('❓ Help: Contact admin for assistance.');
+        }
+
+        function toggleProfileDropdown() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        function editProfile() {
+            document.getElementById('profileDropdown').classList.remove('show');
+            
+            document.getElementById('profileEmpId').value = currentUser.id;
+            document.getElementById('profileEmpName').value = currentUser.name;
+            document.getElementById('profileEmpContact').value = currentUser.contact || '';
+            
+            const currentPicDiv = document.getElementById('currentPicture');
+            if (currentUser.profilePicture) {
+                currentPicDiv.innerHTML = `<img src="${currentUser.profilePicture}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">`;
+            } else {
+                currentPicDiv.innerHTML = '<p style="color: #7f8c8d;">No picture uploaded</p>';
+            }
+            
+            document.getElementById('editProfileModal').style.display = 'block';
+        }
+
+        function handleEditProfileSubmit(e) {
+            e.preventDefault();
+            const contact = document.getElementById('profileEmpContact').value.trim();
+            const pictureFile = document.getElementById('profilePicture').files[0];
+            
+            currentUser.contact = contact;
+            
+            if (pictureFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentUser.profilePicture = e.target.result;
+                    updateEmployeeInArray();
+                    saveData();
+                    updateProfileDisplay();
+                    closeModal();
+                    alert('✅ Profile updated successfully!');
+                };
+                reader.readAsDataURL(pictureFile);
+            } else {
+                updateEmployeeInArray();
+                saveData();
+                updateProfileDisplay();
+                closeModal();
+                alert('✅ Profile updated successfully!');
+            }
+        }
+
+        function updateEmployeeInArray() {
+            const empIndex = employees.findIndex(e => e.id === currentUser.id);
+            if (empIndex !== -1) {
+                employees[empIndex] = { ...employees[empIndex], ...currentUser };
+            }
+        }
+
+        function updateProfileDisplay() {
+            const headerProfileImg = document.getElementById('headerProfileImage');
+            const headerUserName = document.getElementById('headerUserName');
+            
+            if (currentUser.profilePicture) {
+                headerProfileImg.src = currentUser.profilePicture;
+                headerProfileImg.style.display = 'block';
+            } else {
+                headerProfileImg.style.display = 'none';
+            }
+            
+            headerUserName.textContent = currentUser.name;
+            
+            if (currentUser.role === 'employee') {
+                document.getElementById('welcomeHeader').textContent = 'IC 07 GAVNER (SHIVNI) TOLL PLAZA';
+            }
+        }
+
+        function changePassword() {
+            document.getElementById('profileDropdown').classList.remove('show');
+            const newPassword = prompt('🔒 Enter new password:');
+            if (newPassword && newPassword.length >= 6) {
+                currentUser.password = newPassword;
+                const empIndex = employees.findIndex(e => e.id === currentUser.id);
+                if (empIndex !== -1) {
+                    employees[empIndex].password = newPassword;
+                }
+                saveData();
+                alert('✅ Password changed successfully!');
+            } else if (newPassword) {
+                alert('❌ Password must be at least 6 characters long!');
+            }
+        }
+
+        function showDashboard() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('header').style.display = 'block';
+
+            if (currentUser.role === 'admin') {
+                document.getElementById('adminDashboard').style.display = 'block';
+                document.getElementById('welcomeHeader').textContent = 'IC 07 GAVNER (SHIVNI) TOLL PLAZA';
+                document.getElementById('userRole').textContent = 'Admin Dashboard - Full Access';
+                loadAdminData();
+            } else {
+                document.getElementById('employeeDashboard').style.display = 'block';
+                document.getElementById('welcomeHeader').textContent = 'IC 07 GAVNER (SHIVNI) TOLL PLAZA';
+                document.getElementById('userRole').textContent = `Employee ID: ${currentUser.id} | ${currentUser.designation || 'Employee'}`;
+                loadEmployeeData();
+            }
+            updateProfileDisplay();
+        }
+
+        function showEmployeeTab(tabId) {
+            document.querySelectorAll('#employeeDashboard .nav-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('#employeeDashboard .tab-content').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function showAdminTab(tabId) {
+            document.querySelectorAll('#adminDashboard .nav-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('#adminDashboard .tab-content').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function loadEmployeeData() {
+            loadEmployeeRoster();
+            loadEmployeeShiftRequests();
+            loadEmployeeLeaveRequests();
+            loadEmployeeNotifications();
+            updateEmpList();
+        }
+
+        function loadEmployeeRoster() {
+            const container = document.getElementById('empRosterContent');
+            
+            // Debug: Check what data we have
+            console.log('Current user:', currentUser);
+            console.log('Monthly roster:', monthlyRoster);
+            console.log('Looking for roster of:', currentUser.name);
+            
+            const empRoster = monthlyRoster[currentUser.name];
+            
+            if (!empRoster) {
+                // Show sample data if no roster uploaded
+                container.innerHTML = `
+                    <p style="text-align: center; color: #7f8c8d; padding: 20px;">No monthly roster uploaded for <strong>${currentUser.name}</strong> yet.</p>
+                    <p style="text-align: center; color: #7f8c8d;">Please contact admin to upload Excel roster file.</p>
+                    <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                    <p><strong>Sample Excel format needed:</strong></p>
+                    <div style="margin-bottom: 15px; color: #7f8c8d; font-size: 12px;">
+                        <p><strong>Row 1 (Dates):</strong> | Employee_Name | 1 | 2 | 3 | 4 | 5 | 6 | 7 | ... | 31 |</p>
+                        <p><strong>Row 2 (Days):</strong> | Employee_Name | MON | TUE | WED | THU | FRI | SAT | SUN | ... |</p>
+                        <p><strong>Row 3+:</strong> | KARTIK RAJKULE | A | B | C | W/O | A | B | C | ... |</p>
+                        <p><strong>Row 4+:</strong> | AKASH PALGHAN | B | C | A | W/O | B | C | A | ... |</p>
+                        <p><strong>Row 5+:</strong> | ROSHAN SARODE | C | W/O | B | A | C | W/O | B | ... |</p>
+                    </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const currentDate = new Date();
+            const currentMonth = currentDate.getMonth();
+            const currentYear = currentDate.getFullYear();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            
+            let html = '<div style="overflow-x: auto;"><table class="roster-table"><thead>';
+            
+            // Header row 1: Dates
+            html += '<tr><th>Date</th>';
+            for (let day = 1; day <= daysInMonth; day++) {
+                html += `<th>${day}</th>`;
+            }
+            html += '</tr>';
+            
+            // Header row 2: Days
+            html += '<tr><th>Day</th>';
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(currentYear, currentMonth, day);
+                const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                html += `<th>${dayName}</th>`;
+            }
+            html += '</tr></thead><tbody>';
+            
+            // Shift row
+            html += '<tr><td><strong>Shift</strong></td>';
+            for (let day = 1; day <= daysInMonth; day++) {
+                const shift = empRoster[`day${day}`] || 'N/A';
+                console.log(`Day ${day}: shift = "${shift}"`);
+                // Clean shift value - remove any employee names that got mixed in
+                let cleanShift = shift;
+                if (typeof shift === 'string' && shift.length > 5) {
+                    // If shift value is too long, it's probably an employee name
+                    cleanShift = 'N/A';
+                }
+                const shiftClass = cleanShift === 'W/O' || cleanShift === 'OFF' ? 'status-rejected' : 'status-approved';
+                html += `<td><span class="${shiftClass}">${cleanShift}</span></td>`;
+            }
+            html += '</tr></tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function openShiftModal(day = null) {
+            if (day) {
+                const currentDate = new Date();
+                const currentYear = currentDate.getFullYear();
+                const currentMonth = currentDate.getMonth();
+                const shiftDate = new Date(currentYear, currentMonth, day);
+                const myShift = monthlyRoster[currentUser.name][`day${day}`];
+                
+                document.getElementById('shiftRosterId').value = day;
+                document.getElementById('shiftDate').value = shiftDate.toISOString().split('T')[0];
+                document.getElementById('shiftMyShift').value = myShift;
+            }
+            document.getElementById('exchangeShiftGroup').style.display = 'none';
+            document.getElementById('shiftModal').style.display = 'block';
+        }
+
+        function updateExchangeShift() {
+            const withEmpId = document.getElementById('shiftWithEmp').value;
+            const day = document.getElementById('shiftRosterId').value;
+            const exchangeShiftGroup = document.getElementById('exchangeShiftGroup');
+            const theirShiftInput = document.getElementById('shiftTheirShift');
+            
+            if (withEmpId && day) {
+                const withEmp = employees.find(e => e.id === withEmpId);
+                if (withEmp && monthlyRoster[withEmp.name]) {
+                    const theirShift = monthlyRoster[withEmp.name][`day${day}`] || 'Not Assigned';
+                    theirShiftInput.value = theirShift;
+                    exchangeShiftGroup.style.display = 'block';
+                } else {
+                    exchangeShiftGroup.style.display = 'none';
+                }
+            } else {
+                exchangeShiftGroup.style.display = 'none';
+            }
+        }
+
+        function handleShiftSubmit(e) {
+            e.preventDefault();
+            const day = document.getElementById('shiftRosterId').value;
+            const withEmpId = document.getElementById('shiftWithEmp').value;
+            const shiftDate = document.getElementById('shiftDate').value;
+            const myShift = document.getElementById('shiftMyShift').value;
+            const theirShift = document.getElementById('shiftTheirShift').value;
+            const toShift = document.getElementById('addShift').value;
+            
+            const request = {
+                id: Date.now(),
+                fromEmpId: currentUser.id,
+                fromEmpName: currentUser.name,
+                date: shiftDate,
+                day: day,
+                myShift: myShift,
+                withEmpId: withEmpId,
+                withEmpName: employees.find(e => e.id === withEmpId)?.name || 'Unknown',
+                theirShift: theirShift,
+                toShift: toShift,
+                status: 'pending_employee',
+                employeeResponse: null,
+                adminResponse: null,
+                requestedOn: new Date().toISOString()
+            };
+            
+            shiftRequests.push(request);
+            saveData();
+            closeModal();
+            loadEmployeeShiftRequests();
+            alert('✅ Shift exchange request submitted for approval!');
+        }
+
+        function loadEmployeeShiftRequests() {
+            const container = document.getElementById('empShiftRequests');
+            const myRequests = shiftRequests.filter(r => r.fromEmpId === currentUser.id).slice(-2); // Only last 2 entries
+            
+            if (myRequests.length === 0) {
+                container.innerHTML = '<p>No shift exchange requests sent.</p>';
+                return;
+            }
+            
+            let html = '';
+            myRequests.forEach(req => {
+                let statusText = '';
+                let statusClass = '';
+                
+                if (req.status === 'pending_employee') {
+                    statusText = 'WAITING FOR EMPLOYEE RESPONSE';
+                    statusClass = 'status-pending';
+                } else if (req.status === 'employee_accepted') {
+                    statusText = 'EMPLOYEE ACCEPTED - WAITING FOR ADMIN';
+                    statusClass = 'status-pending';
+                } else if (req.status === 'employee_rejected') {
+                    statusText = 'EMPLOYEE REJECTED';
+                    statusClass = 'status-rejected';
+                } else if (req.status === 'admin_approved') {
+                    statusText = 'APPROVED BY ADMIN';
+                    statusClass = 'status-approved';
+                } else if (req.status === 'admin_rejected') {
+                    statusText = 'REJECTED BY ADMIN';
+                    statusClass = 'status-rejected';
+                }
+                
+                html += `<div class="request-card">
+                    <p><strong>Requested On:</strong> ${formatDateTime(req.requestedOn)}</p>
+                    <p><strong>Date:</strong> ${formatDate(req.date)}</p>
+                    <p><strong>My Shift:</strong> ${req.myShift}</p>
+                    <p><strong>With:</strong> ${req.withEmpName}</p>
+                    <p><strong>To Shift:</strong> ${req.toShift || 'N/A'}</p>
+                    <p><strong>Status:</strong> <span class="${statusClass}">${statusText}</span></p>
+                </div>`;
+            });
+            container.innerHTML = html;
+            
+            // Load incoming requests
+            loadIncomingRequests();
+        }
+        
+        function loadIncomingRequests() {
+            const container = document.getElementById('empIncomingRequests');
+            console.log('Current user ID:', currentUser.id);
+            console.log('All shift requests:', shiftRequests);
+            const incomingRequests = shiftRequests.filter(r => r.withEmpId === currentUser.id).slice(-2);
+            console.log('Incoming requests for', currentUser.id, ':', incomingRequests);
+            
+            if (incomingRequests.length === 0) {
+                container.innerHTML = '<p>No incoming shift exchange requests.</p>';
+                return;
+            }
+            
+            let html = '';
+            incomingRequests.forEach(req => {
+                let statusText = '';
+                let statusClass = '';
+                
+                if (req.status === 'pending_employee') {
+                    statusText = 'WAITING FOR YOUR RESPONSE';
+                    statusClass = 'status-pending';
+                } else if (req.status === 'employee_accepted') {
+                    statusText = 'YOU ACCEPTED - WAITING FOR ADMIN';
+                    statusClass = 'status-pending';
+                } else if (req.status === 'employee_rejected') {
+                    statusText = 'YOU REJECTED';
+                    statusClass = 'status-rejected';
+                } else if (req.status === 'admin_approved') {
+                    statusText = 'APPROVED BY ADMIN';
+                    statusClass = 'status-approved';
+                } else if (req.status === 'admin_rejected') {
+                    statusText = 'REJECTED BY ADMIN';
+                    statusClass = 'status-rejected';
+                }
+                
+                html += `<div class="request-card">
+                    <p><strong>Requested On:</strong> ${formatDateTime(req.requestedOn)}</p>
+                    <p><strong>Date:</strong> ${formatDate(req.date)}</p>
+                    <p><strong>From:</strong> ${req.fromEmpName}</p>
+                    <p><strong>Their Shift:</strong> ${req.myShift}</p>
+                    <p><strong>To Shift:</strong> ${req.toShift || 'N/A'}</p>
+                    <p><strong>Status:</strong> <span class="${statusClass}">${statusText}</span></p>`;
+                
+                if (req.status === 'pending_employee') {
+                    html += `<div style="margin-top: 15px;">
+                        <button class="btn btn-success" onclick="respondToRequest(${req.id}, 'accept')" style="width: auto; padding: 8px 16px; margin-right: 10px;">✅ Accept</button>
+                        <button class="btn btn-danger" onclick="respondToRequest(${req.id}, 'reject')" style="width: auto; padding: 8px 16px;">❌ Reject</button>
+                    </div>`;
+                }
+                
+                html += `</div>`;
+            });
+            container.innerHTML = html;
+        }
+        
+        function respondToRequest(requestId, response) {
+            const request = shiftRequests.find(r => r.id === requestId);
+            if (request) {
+                if (response === 'accept') {
+                    request.status = 'employee_accepted';
+                    request.employeeResponse = 'accepted';
+                    alert('✅ Request accepted! Now waiting for admin approval.');
+                } else {
+                    request.status = 'employee_rejected';
+                    request.employeeResponse = 'rejected';
+                    alert('❌ Request rejected.');
+                }
+                saveData();
+                loadEmployeeShiftRequests();
+            }
+        }
+
+        function openLeaveModal() {
+            document.getElementById('leaveModal').style.display = 'block';
+        }
+
+        function handleLeaveSubmit(e) {
+            e.preventDefault();
+            const fromDate = document.getElementById('leaveFromDate').value;
+            const toDate = document.getElementById('leaveToDate').value;
+            const days = document.getElementById('leaveDays').value;
+            const reason = document.getElementById('leaveReason').value;
+            
+            const request = {
+                id: Date.now(),
+                empId: currentUser.id,
+                empName: currentUser.name,
+                fromDate: fromDate,
+                toDate: toDate,
+                days: days,
+                reason: reason,
+                status: 'pending',
+                requestedOn: new Date().toISOString()
+            };
+            
+            leaveRequests.push(request);
+            saveData();
+            closeModal();
+            loadEmployeeLeaveRequests();
+            alert('✅ Leave request submitted for approval!');
+        }
+
+        function loadEmployeeLeaveRequests() {
+            const container = document.getElementById('empLeaveRequests');
+            const myRequests = leaveRequests.filter(r => r.empId === currentUser.id).slice(-2); // Only last 2 entries
+            
+            if (myRequests.length === 0) {
+                container.innerHTML = '<p>No leave requests.</p>';
+                return;
+            }
+            
+            let html = '';
+            myRequests.forEach(req => {
+                html += `<div class="request-card">
+                    <p><strong>Requested On:</strong> ${formatDateTime(req.requestedOn)}</p>
+                    <p><strong>From Date:</strong> ${formatDate(req.fromDate)}</p>
+                    <p><strong>To Date:</strong> ${formatDate(req.toDate)}</p>
+                    <p><strong>Days:</strong> ${req.days}</p>
+                    <p><strong>Reason:</strong> ${req.reason}</p>
+                    <p><strong>Status:</strong> <span class="status-${req.status}">${req.status.toUpperCase()}</span></p>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function loadEmployeeNotifications() {
+            const container = document.getElementById('empNotifications');
+            
+            if (notifications.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 40px;">No notifications from head office.</p>';
+                return;
+            }
+            
+            let html = '';
+            notifications.forEach(notif => {
+                html += `<div class="request-card">
+                    <p><strong>Date:</strong> ${formatDate(notif.date)}</p>
+                    <p><strong>Message:</strong> ${notif.message}</p>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        // Admin Functions
+        function loadAdminData() {
+            loadAdminRoster();
+            loadAdminShiftRequests();
+            loadAdminLeaveRequests();
+            loadAdminEmployees();
+            loadSentNotifications();
+        }
+
+        function uploadRosterFile() {
+            const fileInput = document.getElementById('rosterFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('❌ Please select an Excel file!');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    console.log('Excel data loaded:', jsonData);
+                    
+                    monthlyRoster = {};
+                    let processedEmployees = 0;
+                    
+                    // Look for employee names in ALL cells of first few rows
+                    let employeeColumns = {};
+                    
+                    for (let rowIndex = 0; rowIndex < Math.min(10, jsonData.length); rowIndex++) {
+                        const row = jsonData[rowIndex];
+                        if (!row) continue;
+                        
+                        for (let colIndex = 0; colIndex < row.length; colIndex++) {
+                            const cellValue = row[colIndex]?.toString().trim();
+                            if (!cellValue || cellValue.length < 3) continue;
+                            
+                            // Skip numbers and common headers
+                            if (cellValue.match(/^\d+$/) || 
+                                cellValue.toLowerCase().includes('sr.') ||
+                                cellValue.toLowerCase().includes('date') ||
+                                cellValue.toLowerCase().includes('day')) continue;
+                            
+                            // Check if this cell contains an employee name
+                            const foundEmployee = employees.find(e => {
+                                const empNameWords = e.name.toLowerCase().split(' ');
+                                const cellWords = cellValue.toLowerCase().split(' ');
+                                
+                                // Check if any word from employee name matches any word from cell
+                                return empNameWords.some(empWord => 
+                                    cellWords.some(cellWord => 
+                                        empWord.includes(cellWord) || cellWord.includes(empWord)
+                                    )
+                                );
+                            });
+                            
+                            if (foundEmployee && !employeeColumns[colIndex]) {
+                                employeeColumns[colIndex] = foundEmployee.name;
+                                console.log(`Found employee "${foundEmployee.name}" in row ${rowIndex}, column ${colIndex}: "${cellValue}"`);
+                            } else if (!foundEmployee && cellValue.length > 3 && !employeeColumns[colIndex]) {
+                                // Create new employee from Excel data
+                                const newEmpId = `AR${String(Math.floor(Math.random() * 9000) + 1000)}`;
+                                const newEmployee = {
+                                    id: newEmpId,
+                                    name: cellValue,
+                                    password: '121212',
+                                    role: 'employee'
+                                };
+                                employees.push(newEmployee);
+                                employeeColumns[colIndex] = cellValue;
+                                console.log(`Created new employee "${cellValue}" with ID ${newEmpId}`);
+                            }
+                        }
+                    }
+                    
+                    console.log('Employee columns found:', employeeColumns);
+                    
+                    if (Object.keys(employeeColumns).length === 0) {
+                        // Show what was found for debugging
+                        let foundNames = [];
+                        for (let i = 0; i < Math.min(5, jsonData.length); i++) {
+                            if (jsonData[i]) {
+                                jsonData[i].forEach((cell, idx) => {
+                                    if (cell && typeof cell === 'string' && cell.length > 2 && !cell.match(/^\d+$/)) {
+                                        foundNames.push(`Row ${i}, Col ${idx}: "${cell}"`);
+                                    }
+                                });
+                            }
+                        }
+                        alert(`❌ No employee names found!\n\nFound text in Excel:\n${foundNames.slice(0, 10).join('\n')}\n\nSystem employees:\n${employees.map(e => e.name).join('\n')}`);
+                        return;
+                    }
+                    
+                    // Initialize roster for found employees
+                    Object.values(employeeColumns).forEach(empName => {
+                        monthlyRoster[empName] = {};
+                    });
+                    
+                    // Process shift data from rows
+                    for (let rowIndex = 0; rowIndex < jsonData.length; rowIndex++) {
+                        const row = jsonData[rowIndex];
+                        if (!row) continue;
+                        
+                        const dayNumber = row[0]?.toString().trim();
+                        
+                        // Check if first column is a day number (1-31)
+                        if (dayNumber && dayNumber.match(/^\d+$/) && parseInt(dayNumber) >= 1 && parseInt(dayNumber) <= 31) {
+                            const day = parseInt(dayNumber);
+                            
+                            // Process shifts for each employee column
+                            Object.keys(employeeColumns).forEach(colIndex => {
+                                const empName = employeeColumns[colIndex];
+                                const shiftValue = row[colIndex]?.toString().trim() || 'OFF';
+                                monthlyRoster[empName][`day${day}`] = shiftValue;
+                            });
+                        }
+                    }
+                    
+                    processedEmployees = Object.keys(employeeColumns).length;
+                    
+                    saveData();
+                    loadAdminRoster();
+                    alert(`✅ Roster uploaded successfully! Processed ${processedEmployees} employees.`);
+                    
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    alert('❌ Error reading Excel file: ' + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function loadAdminRoster() {
+            const container = document.getElementById('adminRoster');
+            
+            let html = '<h4>📊 Current Month Roster Summary</h4><table class="roster-table"><thead><tr><th>Employee Name</th><th>Employee ID</th><th>Total Days</th><th>OFF Days</th><th>Status</th></tr></thead><tbody>';
+            
+            // Show ALL employees, not just those with roster data
+            employees.filter(e => e.role !== 'admin').forEach(emp => {
+                const rosterData = monthlyRoster[emp.name];
+                
+                if (rosterData) {
+                    // Employee has roster data
+                    const totalDays = Object.values(rosterData).filter(shift => shift !== 'OFF' && shift !== '').length;
+                    const offDays = Object.values(rosterData).filter(shift => shift === 'OFF').length;
+                    
+                    html += `<tr>
+                        <td>${emp.name}</td>
+                        <td>${emp.id}</td>
+                        <td>${totalDays}</td>
+                        <td>${offDays}</td>
+                        <td><span class="status-approved">ROSTER LOADED</span></td>
+                    </tr>`;
+                } else {
+                    // Employee has no roster data
+                    html += `<tr>
+                        <td>${emp.name}</td>
+                        <td>${emp.id}</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td><span class="status-pending">NO ROSTER DATA</span></td>
+                    </tr>`;
+                }
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function loadAdminShiftRequests() {
+            const container = document.getElementById('adminShiftRequests');
+            const approvalRequests = shiftRequests.filter(r => r.status === 'employee_accepted');
+            
+            let html = '';
+            
+            if (approvalRequests.length === 0) {
+                html += '<p>No requests pending admin approval.</p>';
+            } else {
+                html += '<h4>Pending Admin Approval</h4><table class="roster-table"><thead><tr><th>From</th><th>To</th><th>Date</th><th>From Shift</th><th>To Shift</th><th>Employee Status</th><th>Requested On</th><th>Action</th></tr></thead><tbody>';
+                approvalRequests.forEach(req => {
+                    html += `<tr>
+                        <td>${req.fromEmpName}</td>
+                        <td>${req.withEmpName}</td>
+                        <td>${formatDate(req.date)}</td>
+                        <td><span class="status-approved">${req.myShift}</span></td>
+                        <td><span class="status-approved">${req.toShift || 'N/A'}</span></td>
+                        <td><span class="status-approved">EMPLOYEE ACCEPTED</span></td>
+                        <td>${formatDateTime(req.requestedOn)}</td>
+                        <td>
+                            <button class="btn btn-success" onclick="adminApproveRequest(${req.id}, 'approve')" style="width: auto; padding: 8px 12px; margin-right: 5px;">✅ Approve</button>
+                            <button class="btn btn-danger" onclick="adminApproveRequest(${req.id}, 'reject')" style="width: auto; padding: 8px 12px;">❌ Reject</button>
+                        </td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+            }
+            
+            // Show all requests history with search - ALWAYS SHOW
+            html += '<h4 style="margin-top: 30px;">All Requests History</h4>';
+            html += '<div style="margin-bottom: 15px;">';
+            html += '<input type="text" id="searchEmployee" placeholder="Search by Name or Employee ID" style="width: 200px; padding: 8px; margin-right: 10px; border: 2px solid #ecf0f1; border-radius: 5px;">';
+            html += '<input type="date" id="searchDate" style="padding: 8px; margin-right: 10px; border: 2px solid #ecf0f1; border-radius: 5px;">';
+            html += '<button class="btn btn-primary" onclick="searchShiftHistory()" style="width: auto; padding: 8px 16px;">🔍 Search</button>';
+            html += '<button class="btn btn-success" onclick="clearShiftSearch()" style="width: auto; padding: 8px 16px; margin-left: 5px;">Clear</button>';
+            html += '</div>';
+            html += '<div id="shiftHistoryTable"></div>';
+            
+            container.innerHTML = html;
+            displayShiftHistory(shiftRequests);
+        }
+        
+        function displayShiftHistory(requests) {
+            const container = document.getElementById('shiftHistoryTable');
+            let html = '<table class="roster-table"><thead><tr><th>From</th><th>To</th><th>Date</th><th>From Shift</th><th>To Shift</th><th>Requested On</th><th>Status</th></tr></thead><tbody>';
+            requests.forEach(req => {
+                let statusText = req.status === 'pending_employee' ? 'WAITING FOR EMPLOYEE' :
+                               req.status === 'employee_accepted' ? 'EMPLOYEE ACCEPTED' :
+                               req.status === 'employee_rejected' ? 'EMPLOYEE REJECTED' :
+                               req.status === 'admin_approved' ? 'ADMIN APPROVED' :
+                               req.status === 'admin_rejected' ? 'ADMIN REJECTED' : req.status.toUpperCase();
+                
+                let statusClass = req.status.includes('approved') ? 'status-approved' :
+                                req.status.includes('rejected') ? 'status-rejected' : 'status-pending';
+                
+                html += `<tr>
+                    <td>${req.fromEmpName}</td>
+                    <td>${req.withEmpName}</td>
+                    <td>${formatDate(req.date)}</td>
+                    <td><span class="status-approved">${req.myShift}</span></td>
+                    <td><span class="status-approved">${req.theirShift || 'N/A'}</span></td>
+                    <td>${formatDateTime(req.requestedOn)}</td>
+                    <td><span class="${statusClass}">${statusText}</span></td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+        
+        function searchShiftHistory() {
+            const searchEmployee = document.getElementById('searchEmployee').value.toLowerCase();
+            const searchDate = document.getElementById('searchDate').value;
+            
+            let filteredRequests = shiftRequests;
+            
+            if (searchEmployee) {
+                filteredRequests = filteredRequests.filter(req => 
+                    req.fromEmpName.toLowerCase().includes(searchEmployee) ||
+                    req.withEmpName.toLowerCase().includes(searchEmployee) ||
+                    req.fromEmpId.toLowerCase().includes(searchEmployee) ||
+                    req.withEmpId.toLowerCase().includes(searchEmployee)
+                );
+            }
+            
+            if (searchDate) {
+                filteredRequests = filteredRequests.filter(req => 
+                    req.date.split('T')[0] === searchDate
+                );
+            }
+            
+            displayShiftHistory(filteredRequests);
+        }
+        
+        function clearShiftSearch() {
+            document.getElementById('searchEmployee').value = '';
+            document.getElementById('searchDate').value = '';
+            displayShiftHistory(shiftRequests);
+        }
+        
+        function adminApproveRequest(requestId, action) {
+            const request = shiftRequests.find(r => r.id === requestId);
+            if (request) {
+                if (action === 'approve') {
+                    request.status = 'admin_approved';
+                    request.adminResponse = 'approved';
+                    alert('✅ Shift exchange approved!');
+                } else {
+                    request.status = 'admin_rejected';
+                    request.adminResponse = 'rejected';
+                    alert('❌ Shift exchange rejected.');
+                }
+                saveData();
+                loadAdminShiftRequests();
+            }
+        }
+
+        function loadAdminLeaveRequests() {
+            const container = document.getElementById('adminLeaveRequests');
+            const pendingRequests = leaveRequests.filter(r => r.status === 'pending');
+            
+            if (pendingRequests.length === 0) {
+                container.innerHTML = '<p>No pending requests.</p>';
+            } else {
+                let html = '<h4>Pending Leave Requests</h4><table class="roster-table"><thead><tr><th>Employee</th><th>From Date</th><th>To Date</th><th>Days</th><th>Reason</th><th>Requested On</th><th>Action</th></tr></thead><tbody>';
+                pendingRequests.forEach(req => {
+                    html += `<tr>
+                        <td>${req.empName}</td>
+                        <td>${formatDate(req.fromDate)}</td>
+                        <td>${formatDate(req.toDate)}</td>
+                        <td>${req.days}</td>
+                        <td>${req.reason}</td>
+                        <td>${formatDateTime(req.requestedOn)}</td>
+                        <td>
+                            <button class="btn btn-success" onclick="updateRequestStatus('leave', ${req.id}, 'approved')">✅ Approve</button>
+                            <button class="btn btn-danger" onclick="updateRequestStatus('leave', ${req.id}, 'rejected')">❌ Reject</button>
+                        </td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            }
+            
+            
+            // Add leave history search - ALWAYS show for admin
+            let historyHtml = '<h4 style="margin-top: 30px;">All Leave Requests History</h4>';
+            historyHtml += '<div style="margin-bottom: 15px;">';
+            historyHtml += '<input type="text" id="searchLeaveEmployee" placeholder="Search by Name or Employee ID" style="width: 200px; padding: 8px; margin-right: 10px; border: 2px solid #ecf0f1; border-radius: 5px;">';
+            historyHtml += '<button class="btn btn-primary" onclick="searchLeaveHistory()" style="width: auto; padding: 8px 16px;">🔍 Search</button>';
+            historyHtml += '<button class="btn btn-success" onclick="clearLeaveSearch()" style="width: auto; padding: 8px 16px; margin-left: 5px;">Clear</button>';
+            historyHtml += '</div>';
+            historyHtml += '<div id="leaveHistoryTable"></div>';
+            
+            if (pendingRequests.length === 0) {
+                container.innerHTML = historyHtml;
+            } else {
+                container.innerHTML += historyHtml;
+            }
+            displayLeaveHistory(leaveRequests);
+        }
+        
+        function displayLeaveHistory(requests) {
+            const container = document.getElementById('leaveHistoryTable');
+            let html = '<table class="roster-table"><thead><tr><th>Employee</th><th>From Date</th><th>To Date</th><th>Days</th><th>Reason</th><th>Requested On</th><th>Status</th></tr></thead><tbody>';
+            requests.forEach(req => {
+                let statusClass = req.status === 'approved' ? 'status-approved' :
+                                req.status === 'rejected' ? 'status-rejected' : 'status-pending';
+                
+                html += `<tr>
+                    <td>${req.empName}</td>
+                    <td>${formatDate(req.fromDate)}</td>
+                    <td>${formatDate(req.toDate)}</td>
+                    <td>${req.days}</td>
+                    <td>${req.reason}</td>
+                    <td>${formatDateTime(req.requestedOn)}</td>
+                    <td><span class="${statusClass}">${req.status.toUpperCase()}</span></td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+        
+        function searchLeaveHistory() {
+            const searchEmployee = document.getElementById('searchLeaveEmployee').value.toLowerCase();
+            
+            let filteredRequests = leaveRequests;
+            
+            if (searchEmployee) {
+                filteredRequests = filteredRequests.filter(req => 
+                    req.empName.toLowerCase().includes(searchEmployee) ||
+                    req.empId.toLowerCase().includes(searchEmployee)
+                );
+            }
+            
+            displayLeaveHistory(filteredRequests);
+        }
+        
+        function clearLeaveSearch() {
+            document.getElementById('searchLeaveEmployee').value = '';
+            displayLeaveHistory(leaveRequests);
+        }
+
+        function updateRequestStatus(type, requestId, status) {
+            if (type === 'leave') {
+                const req = leaveRequests.find(r => r.id === requestId);
+                if (req) req.status = status;
+                saveData();
+                loadAdminData();
+                alert('✅ Leave request status updated!');
+            }
+        }
+
+        function loadAdminEmployees() {
+            const container = document.getElementById('adminEmployees');
+            let html = '<table class="roster-table"><thead><tr><th>ID</th><th>Name</th><th>Designation</th><th>Contact</th><th>Action</th></tr></thead><tbody>';
+            employees.filter(e => e.role !== 'admin').forEach(emp => {
+                html += `<tr>
+                    <td>${emp.id}</td>
+                    <td>${emp.name}</td>
+                    <td>${emp.designation || 'N/A'}</td>
+                    <td>${emp.contact || 'N/A'}</td>
+                    <td>
+                        <button class="btn btn-danger" onclick="deleteEmployee('${emp.id}')" style="width: auto; padding: 8px 12px;">Delete</button>
+                        <button class="btn btn-primary" onclick="editEmployee('${emp.id}')" style="width: auto; padding: 5px 8px; margin-right: 5px;">✏️ Edit</button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function addEmployee() {
+            const id = document.getElementById('newEmpId').value;
+            const name = document.getElementById('newEmpName').value;
+            const designation = document.getElementById('newEmpDesignation').value;
+            const contact = document.getElementById('newEmpContact').value;
+            const pass = document.getElementById('newEmpPass').value;
+            
+            if (id && name && pass && !employees.find(e => e.id === id)) {
+                employees.push({ id, name, designation, contact, password: pass, role: 'employee' });
+                saveData();
+                loadAdminEmployees();
+                document.getElementById('newEmpId').value = '';
+                document.getElementById('newEmpName').value = '';
+                document.getElementById('newEmpDesignation').value = '';
+                document.getElementById('newEmpContact').value = '';
+                document.getElementById('newEmpPass').value = '';
+                alert('✅ Employee added successfully!');
+            } else {
+                alert('❌ Invalid input or employee ID already exists!');
+            }
+        }
+
+        function editEmployee(empId) {
+            const emp = employees.find(e => e.id === empId);
+            if (!emp) return;
+            
+            document.getElementById('editEmpId').value = emp.id;
+            document.getElementById('editEmpIdDisplay').value = emp.id;
+            document.getElementById('editEmpName').value = emp.name;
+            document.getElementById('editEmpDesignation').value = emp.designation || '';
+            document.getElementById('editEmpContact').value = emp.contact || '';
+            document.getElementById('editEmpPassword').value = emp.password;
+            
+            document.getElementById('editEmployeeModal').style.display = 'block';
+        }
+
+        function handleEditEmployeeSubmit(e) {
+            e.preventDefault();
+            const empId = document.getElementById('editEmpId').value;
+            const name = document.getElementById('editEmpName').value.trim();
+            const designation = document.getElementById('editEmpDesignation').value.trim();
+            const contact = document.getElementById('editEmpContact').value.trim();
+            const password = document.getElementById('editEmpPassword').value.trim();
+            
+            if (!name || !password) {
+                alert('❌ Name and password are required!');
+                return;
+            }
+            
+            const emp = employees.find(e => e.id === empId);
+            if (emp) {
+                emp.name = name;
+                emp.designation = designation;
+                emp.contact = contact;
+                emp.password = password;
+                saveData();
+                loadAdminEmployees();
+                closeModal();
+                alert('✅ Employee updated successfully!');
+            }
+        }
+
+        function deleteEmployee(empId) {
+            if (confirm('Are you sure you want to delete this employee?')) {
+                employees = employees.filter(e => e.id !== empId);
+                delete monthlyRoster[empId];
+                saveData();
+                loadAdminData();
+                alert('✅ Employee deleted successfully!');
+            }
+        }
+
+        function updateEmpList() {
+            const selectElement = document.getElementById('shiftWithEmp');
+            const otherEmployees = employees.filter(e => e.role === 'employee' && e.id !== currentUser.id);
+            
+            selectElement.innerHTML = '<option value="">Select Employee</option>';
+            otherEmployees.forEach(emp => {
+                selectElement.innerHTML += `<option value="${emp.id}">${emp.id} - ${emp.name}</option>`;
+            });
+        }
+
+        function sendNotification() {
+            const message = document.getElementById('notificationText').value;
+            if (!message.trim()) {
+                alert('❌ Please enter a notification message!');
+                return;
+            }
+            
+            const notification = {
+                id: Date.now(),
+                message: message,
+                date: new Date().toISOString()
+            };
+            
+            notifications.push(notification);
+            saveData();
+            document.getElementById('notificationText').value = '';
+            loadSentNotifications();
+            alert('✅ Notification sent to all employees!');
+        }
+
+        function loadSentNotifications() {
+            const container = document.getElementById('sentNotifications');
+            
+            if (notifications.length === 0) {
+                container.innerHTML = '<p>No notifications sent yet.</p>';
+                return;
+            }
+            
+            let html = '<h4>Recently Sent Notifications:</h4>';
+            notifications.slice(-5).reverse().forEach(notif => {
+                html += `<div class="request-card">
+                    <p><strong>Date:</strong> ${formatDate(notif.date)}</p>
+                    <p><strong>Message:</strong> ${notif.message}</p>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function logout() {
+            currentUser = null;
+            clearSessionTimer();
+            localStorage.removeItem('currentUser');
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('employeeDashboard').style.display = 'none';
+            document.getElementById('adminDashboard').style.display = 'none';
+            document.getElementById('header').style.display = 'none';
+            document.getElementById('loginForm').reset();
+            document.getElementById('loginError').textContent = '';
+            document.getElementById('empId').value = '';
+            document.getElementById('password').value = '';
+            loadData();
+        }
+
+        function closeModal() {
+            document.querySelectorAll('.modal').forEach(modal => modal.style.display = 'none');
+        }
+
+        function formatDate(dateStr) {
+            return new Date(dateStr).toLocaleDateString('en-IN');
+        }
+        
+        function formatDateTime(dateStr) {
+            if (!dateStr) return 'N/A';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-IN') + ' ' + date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function saveData() {
+            localStorage.setItem('employees', JSON.stringify(employees));
+            localStorage.setItem('monthlyRoster', JSON.stringify(monthlyRoster));
+            localStorage.setItem('shiftRequests', JSON.stringify(shiftRequests));
+            localStorage.setItem('leaveRequests', JSON.stringify(leaveRequests));
+            localStorage.setItem('notifications', JSON.stringify(notifications));
+            if (currentUser) {
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            }
+        }
+
+        function loadData() {
+            const savedEmployees = localStorage.getItem('employees');
+            const savedMonthlyRoster = localStorage.getItem('monthlyRoster');
+            const savedShift = localStorage.getItem('shiftRequests');
+            const savedLeave = localStorage.getItem('leaveRequests');
+            const savedNotifications = localStorage.getItem('notifications');
+            const savedUser = localStorage.getItem('currentUser');
+            
+            if (savedEmployees) employees = JSON.parse(savedEmployees);
+            if (savedMonthlyRoster) monthlyRoster = JSON.parse(savedMonthlyRoster);
+            if (savedShift) shiftRequests = JSON.parse(savedShift);
+            if (savedLeave) leaveRequests = JSON.parse(savedLeave);
+            if (savedNotifications) notifications = JSON.parse(savedNotifications);
+            if (savedUser) currentUser = JSON.parse(savedUser);
+        }
+
+        // Session Management Functions
+        function isSessionValid() {
+            if (!currentUser || !currentUser.loginTime) return false;
+            const currentTime = Date.now();
+            const sessionAge = currentTime - currentUser.loginTime;
+            return sessionAge < SESSION_DURATION;
+        }
+
+        function checkSessionValidity() {
+            if (currentUser && !isSessionValid()) {
+                alert('⏰ Your session has expired. Please login again.');
+                currentUser = null;
+            }
+        }
+
+        function startSessionTimer() {
+            clearSessionTimer();
+            sessionTimeout = setTimeout(() => {
+                alert('⏰ Your session has expired due to inactivity. Please login again.');
+                logout();
+            }, SESSION_DURATION);
+        }
+
+        function clearSessionTimer() {
+            if (sessionTimeout) {
+                clearTimeout(sessionTimeout);
+                sessionTimeout = null;
+            }
+        }
+
+        function resetSessionTimer() {
+            if (currentUser) {
+                currentUser.loginTime = Date.now();
+                saveData();
+                startSessionTimer();
+            }
+        }
+
+        // Close modal on outside click
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                closeModal();
+            }
+            if (!event.target.matches('.profile-btn')) {
+                const dropdown = document.getElementById('profileDropdown');
+                if (dropdown && dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
+                }
+            }
+        }
+
+        // Reset session timer on user activity
+        document.addEventListener('click', resetSessionTimer);
+        document.addEventListener('keypress', resetSessionTimer);
+        document.addEventListener('scroll', resetSessionTimer);
+    </script>
+</body>
+</html>
