@@ -444,7 +444,7 @@
                 <button class="nav-tab active" onclick="showEmployeeTab('empRosterTab')">📅 My Roster</button>
                 <button class="nav-tab" onclick="showEmployeeTab('empShiftTab')">🔄 Shift Exchange</button>
                 <button class="nav-tab" onclick="showEmployeeTab('empLeaveTab')">📋 Leave</button>
-                <button class="nav-tab" onclick="showEmployeeTab('empNotificationTab')">🔔 Notifications</button>
+                <button class="nav-tab" onclick="showEmployeeTab('empNotificationTab')">🔔 Notifications <span id="notificationBadge" class="notification-badge" style="display: none; background: #e74c3c; color: white; border-radius: 50%; padding: 2px 6px; font-size: 12px; margin-left: 5px;">0</span></button>
             </div>
             
             <!-- Employee Roster Tab -->
@@ -974,6 +974,14 @@
             
             document.querySelectorAll('#employeeDashboard .tab-content').forEach(tab => tab.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
+            
+            // Hide notification badge when notifications tab is clicked
+            if (tabId === 'empNotificationTab') {
+                const badge = document.getElementById('notificationBadge');
+                if (badge) {
+                    badge.style.display = 'none';
+                }
+            }
         }
 
         function showAdminTab(tabId) {
@@ -990,52 +998,64 @@
             loadEmployeeLeaveRequests();
             loadEmployeeNotifications();
             updateEmpList();
+            updateNotificationBadge(); // Update badge when loading employee data
         }
 
         function loadEmployeeRoster() {
             const container = document.getElementById('empRosterContent');
             
-            // Debug: Check what data we have
-            console.log('Current user:', currentUser);
-            console.log('Monthly roster:', monthlyRoster);
-            console.log('Looking for roster of:', currentUser.name);
+            // Find roster data for current employee by matching name
+            let empRoster = null;
+            let matchedName = null;
             
-            const empRoster = monthlyRoster[currentUser.name];
+            // Try exact name match first
+            if (monthlyRoster[currentUser.name]) {
+                empRoster = monthlyRoster[currentUser.name];
+                matchedName = currentUser.name;
+            } else {
+                // Try partial name matching
+                const userNameWords = currentUser.name.toLowerCase().split(' ');
+                for (const rosterName in monthlyRoster) {
+                    const rosterNameWords = rosterName.toLowerCase().split(' ');
+                    // Check if any word matches
+                    const hasMatch = userNameWords.some(userWord => 
+                        rosterNameWords.some(rosterWord => 
+                            userWord.includes(rosterWord) || rosterWord.includes(userWord)
+                        )
+                    );
+                    if (hasMatch) {
+                        empRoster = monthlyRoster[rosterName];
+                        matchedName = rosterName;
+                        break;
+                    }
+                }
+            }
             
             if (!empRoster) {
-                // Show sample data if no roster uploaded
                 container.innerHTML = `
-                    <p style="text-align: center; color: #7f8c8d; padding: 20px;">No monthly roster uploaded for <strong>${currentUser.name}</strong> yet.</p>
-                    <p style="text-align: center; color: #7f8c8d;">Please contact admin to upload Excel roster file.</p>
-                    <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
-                    <p><strong>Sample Excel format needed:</strong></p>
-                    <div style="margin-bottom: 15px; color: #7f8c8d; font-size: 12px;">
-                        <p><strong>Row 1 (Dates):</strong> | Employee_Name | 1 | 2 | 3 | 4 | 5 | 6 | 7 | ... | 31 |</p>
-                        <p><strong>Row 2 (Days):</strong> | Employee_Name | MON | TUE | WED | THU | FRI | SAT | SUN | ... |</p>
-                        <p><strong>Row 3+:</strong> | KARTIK RAJKULE | A | B | C | W/O | A | B | C | ... |</p>
-                        <p><strong>Row 4+:</strong> | AKASH PALGHAN | B | C | A | W/O | B | C | A | ... |</p>
-                        <p><strong>Row 5+:</strong> | ROSHAN SARODE | C | W/O | B | A | C | W/O | B | ... |</p>
-                    </div>
-                    </div>
+                    <p style="text-align: center; color: #7f8c8d; padding: 20px;">No monthly roster found for <strong>${currentUser.name}</strong>.</p>
+                    <p style="text-align: center; color: #7f8c8d;">Please contact admin to upload Excel roster file with your name.</p>
                 `;
                 return;
             }
             
+            // Get current month details
             const currentDate = new Date();
             const currentMonth = currentDate.getMonth();
             const currentYear = currentDate.getFullYear();
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
             
+            // Build roster table in exact format requested
             let html = '<div style="overflow-x: auto;"><table class="roster-table"><thead>';
             
-            // Header row 1: Dates
+            // Row 1: Date numbers (1, 2, 3, ..., 31)
             html += '<tr><th>Date</th>';
             for (let day = 1; day <= daysInMonth; day++) {
                 html += `<th>${day}</th>`;
             }
             html += '</tr>';
             
-            // Header row 2: Days
+            // Row 2: Day names (Mon, Tue, Wed, ..., Sun)
             html += '<tr><th>Day</th>';
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(currentYear, currentMonth, day);
@@ -1044,25 +1064,26 @@
             }
             html += '</tr></thead><tbody>';
             
-            // Shift row
+            // Row 3: Shift data (A, B, C, W/O) - exactly as from Excel
             html += '<tr><td><strong>Shift</strong></td>';
             for (let day = 1; day <= daysInMonth; day++) {
                 const shift = empRoster[`day${day}`] || 'N/A';
-                console.log(`Day ${day}: shift = "${shift}"`);
-                // Clean shift value - remove any employee names that got mixed in
-                let cleanShift = shift;
-                if (typeof shift === 'string' && shift.length > 5) {
-                    // If shift value is too long, it's probably an employee name
-                    cleanShift = 'N/A';
-                }
-                const shiftClass = cleanShift === 'W/O' || cleanShift === 'OFF' ? 'status-rejected' : 'status-approved';
-                html += `<td><span class="${shiftClass}">${cleanShift}</span></td>`;
+                const shiftClass = shift === 'W/O' || shift === 'OFF' ? 'status-rejected' : 'status-approved';
+                html += `<td><span class="${shiftClass}">${shift}</span></td>`;
             }
             html += '</tr></tbody></table></div>';
+            
+            // Add info about matched name if different
+            if (matchedName !== currentUser.name) {
+                html += `<p style="margin-top: 10px; font-size: 12px; color: #7f8c8d;">Showing roster for: <strong>${matchedName}</strong></p>`;
+            }
+            
             container.innerHTML = html;
         }
 
         function openShiftModal(day = null) {
+            updateEmpList(); // Ensure employee list is populated
+            
             if (day) {
                 const currentDate = new Date();
                 const currentYear = currentDate.getFullYear();
@@ -1304,6 +1325,9 @@
         function loadEmployeeNotifications() {
             const container = document.getElementById('empNotifications');
             
+            // Update notification badge
+            updateNotificationBadge();
+            
             if (notifications.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 40px;">No notifications from head office.</p>';
                 return;
@@ -1317,6 +1341,19 @@
                 </div>`;
             });
             container.innerHTML = html;
+        }
+        
+        function updateNotificationBadge() {
+            const badge = document.getElementById('notificationBadge');
+            if (badge) {
+                const count = notifications.length;
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.style.display = 'inline';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
         }
 
         // Admin Functions
@@ -1351,99 +1388,51 @@
                     monthlyRoster = {};
                     let processedEmployees = 0;
                     
-                    // Look for employee names in ALL cells of first few rows
-                    let employeeColumns = {};
-                    
-                    for (let rowIndex = 0; rowIndex < Math.min(10, jsonData.length); rowIndex++) {
-                        const row = jsonData[rowIndex];
-                        if (!row) continue;
-                        
-                        for (let colIndex = 0; colIndex < row.length; colIndex++) {
-                            const cellValue = row[colIndex]?.toString().trim();
-                            if (!cellValue || cellValue.length < 3) continue;
-                            
-                            // Skip numbers and common headers
-                            if (cellValue.match(/^\d+$/) || 
-                                cellValue.toLowerCase().includes('sr.') ||
-                                cellValue.toLowerCase().includes('date') ||
-                                cellValue.toLowerCase().includes('day')) continue;
-                            
-                            // Check if this cell contains an employee name
-                            const foundEmployee = employees.find(e => {
-                                const empNameWords = e.name.toLowerCase().split(' ');
-                                const cellWords = cellValue.toLowerCase().split(' ');
-                                
-                                // Check if any word from employee name matches any word from cell
-                                return empNameWords.some(empWord => 
-                                    cellWords.some(cellWord => 
-                                        empWord.includes(cellWord) || cellWord.includes(empWord)
-                                    )
-                                );
-                            });
-                            
-                            if (foundEmployee && !employeeColumns[colIndex]) {
-                                employeeColumns[colIndex] = foundEmployee.name;
-                                console.log(`Found employee "${foundEmployee.name}" in row ${rowIndex}, column ${colIndex}: "${cellValue}"`);
-                            } else if (!foundEmployee && cellValue.length > 3 && !employeeColumns[colIndex]) {
-                                // Create new employee from Excel data
-                                const newEmpId = `AR${String(Math.floor(Math.random() * 9000) + 1000)}`;
-                                const newEmployee = {
-                                    id: newEmpId,
-                                    name: cellValue,
-                                    password: '121212',
-                                    role: 'employee'
-                                };
-                                employees.push(newEmployee);
-                                employeeColumns[colIndex] = cellValue;
-                                console.log(`Created new employee "${cellValue}" with ID ${newEmpId}`);
-                            }
-                        }
-                    }
-                    
-                    console.log('Employee columns found:', employeeColumns);
-                    
-                    if (Object.keys(employeeColumns).length === 0) {
-                        // Show what was found for debugging
-                        let foundNames = [];
-                        for (let i = 0; i < Math.min(5, jsonData.length); i++) {
-                            if (jsonData[i]) {
-                                jsonData[i].forEach((cell, idx) => {
-                                    if (cell && typeof cell === 'string' && cell.length > 2 && !cell.match(/^\d+$/)) {
-                                        foundNames.push(`Row ${i}, Col ${idx}: "${cell}"`);
-                                    }
-                                });
-                            }
-                        }
-                        alert(`❌ No employee names found!\n\nFound text in Excel:\n${foundNames.slice(0, 10).join('\n')}\n\nSystem employees:\n${employees.map(e => e.name).join('\n')}`);
-                        return;
-                    }
-                    
-                    // Initialize roster for found employees
-                    Object.values(employeeColumns).forEach(empName => {
-                        monthlyRoster[empName] = {};
-                    });
-                    
-                    // Process shift data from rows
+                    // Find employee names in first column of each row
                     for (let rowIndex = 0; rowIndex < jsonData.length; rowIndex++) {
                         const row = jsonData[rowIndex];
-                        if (!row) continue;
+                        if (!row || row.length < 2) continue;
                         
-                        const dayNumber = row[0]?.toString().trim();
+                        const firstCell = row[0]?.toString().trim();
+                        if (!firstCell || firstCell.length < 3) continue;
                         
-                        // Check if first column is a day number (1-31)
-                        if (dayNumber && dayNumber.match(/^\d+$/) && parseInt(dayNumber) >= 1 && parseInt(dayNumber) <= 31) {
-                            const day = parseInt(dayNumber);
+                        // Skip header rows (dates, days)
+                        if (firstCell.match(/^\d+$/) || 
+                            firstCell.toLowerCase().includes('date') ||
+                            firstCell.toLowerCase().includes('day') ||
+                            firstCell.toLowerCase().includes('mon') ||
+                            firstCell.toLowerCase().includes('tue')) continue;
+                        
+                        // Check if this is an employee name
+                        const foundEmployee = employees.find(e => {
+                            const empNameWords = e.name.toLowerCase().split(' ');
+                            const cellWords = firstCell.toLowerCase().split(' ');
+                            return empNameWords.some(empWord => 
+                                cellWords.some(cellWord => 
+                                    empWord.includes(cellWord) || cellWord.includes(empWord)
+                                )
+                            );
+                        });
+                        
+                        if (foundEmployee || firstCell.length > 3) {
+                            const employeeName = foundEmployee ? foundEmployee.name : firstCell;
+                            monthlyRoster[employeeName] = {};
                             
-                            // Process shifts for each employee column
-                            Object.keys(employeeColumns).forEach(colIndex => {
-                                const empName = employeeColumns[colIndex];
-                                const shiftValue = row[colIndex]?.toString().trim() || 'OFF';
-                                monthlyRoster[empName][`day${day}`] = shiftValue;
-                            });
+                            // Process shift data for this employee (skip first column which is name)
+                            for (let colIndex = 1; colIndex < row.length && colIndex <= 31; colIndex++) {
+                                const shiftValue = row[colIndex]?.toString().trim() || 'N/A';
+                                monthlyRoster[employeeName][`day${colIndex}`] = shiftValue;
+                            }
+                            
+                            processedEmployees++;
+                            console.log(`Processed roster for: ${employeeName}`);
                         }
                     }
                     
-                    processedEmployees = Object.keys(employeeColumns).length;
+                    if (processedEmployees === 0) {
+                        alert('❌ No employee roster data found in Excel file!\n\nExpected format:\nRow 1: Employee_Name | 1 | 2 | 3 | ... | 31\nRow 2: KARTIK RAJKULE | A | B | C | ... | W/O');
+                        return;
+                    }
                     
                     saveData();
                     loadAdminRoster();
@@ -1798,6 +1787,8 @@
 
         function updateEmpList() {
             const selectElement = document.getElementById('shiftWithEmp');
+            if (!selectElement) return;
+            
             const otherEmployees = employees.filter(e => e.role === 'employee' && e.id !== currentUser.id);
             
             selectElement.innerHTML = '<option value="">Select Employee</option>';
