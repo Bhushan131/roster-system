@@ -7,13 +7,19 @@ let employees = [
 ];
 
 let roster = [
-    { id: 1, empId: 'EMP001', date: '2026-01-05', shift: '6AM-2PM', status: 'assigned' },
-    { id: 2, empId: 'EMP002', date: '2026-01-05', shift: '2PM-10PM', status: 'assigned' },
-    { id: 3, empId: 'EMP003', date: '2026-01-05', shift: '10PM-6AM', status: 'assigned' }
+    { id: 1, empId: 'EMP001', date: '2026-01-05', shift: 'A', status: 'assigned' },
+    { id: 2, empId: 'EMP002', date: '2026-01-05', shift: 'B', status: 'assigned' },
+    { id: 3, empId: 'EMP003', date: '2026-01-05', shift: 'C', status: 'assigned' }
 ];
 
 let shiftRequests = [];
 let leaveRequests = [];
+let notifications = [
+    { id: 1, empId: 'EMP001', title: 'Shift Assignment', message: 'Your shift for Jan 5th has been assigned: A Shift', date: '2026-01-03', read: false },
+    { id: 2, empId: 'EMP001', title: 'Leave Request Update', message: 'Your leave request has been approved by management', date: '2026-01-02', read: false },
+    { id: 3, empId: 'EMP002', title: 'Shift Change', message: 'Your shift for Jan 5th has been updated: B Shift', date: '2026-01-03', read: false },
+    { id: 4, empId: 'EMP003', title: 'Welcome Message', message: 'Welcome to IC 07 GAVNER Toll Plaza. Please check your roster regularly.', date: '2026-01-01', read: false }
+];
 
 // Current user
 let currentUser = null;
@@ -73,11 +79,15 @@ function showDashboard() {
                     <button class="nav-tab active" onclick="showTab('roster')">My Roster</button>
                     <button class="nav-tab" onclick="showTab('shift-exchange')">Shift Exchange</button>
                     <button class="nav-tab" onclick="showTab('leave')">Leave Request</button>
+                    <button class="nav-tab" onclick="showTab('notifications')" id="notifications-tab">
+                        Notifications <span id="notification-indicator" class="notification-badge"></span>
+                    </button>
                 </div>
                 
                 <div id="roster-tab" class="tab-content active"></div>
                 <div id="shift-exchange-tab" class="tab-content"></div>
                 <div id="leave-tab" class="tab-content"></div>
+                <div id="notifications-tab" class="tab-content"></div>
                 
                 <button class="action-btn" onclick="logout()">Logout</button>
             </div>
@@ -91,15 +101,22 @@ function showDashboard() {
                     <input type="hidden" id="shift-roster-id">
                     <div class="input-group">
                         <label>Date</label>
-                        <input type="date" id="shift-date" readonly>
+                        <input type="date" id="shift-date" required>
                     </div>
                     <div class="input-group">
                         <label>My Shift</label>
-                        <input type="text" id="shift-my-shift" readonly>
+                        <select id="shift-my-shift" required>
+                            <option value="">Select Shift</option>
+                            <option value="A">A Shift</option>
+                            <option value="B">B Shift</option>
+                            <option value="C">C Shift</option>
+                        </select>
                     </div>
                     <div class="input-group">
-                        <label>Exchange with Employee ID</label>
-                        <input type="text" id="shift-with-emp" required>
+                        <label>Exchange with Employee</label>
+                        <select id="shift-with-emp" required>
+                            <option value="">Select Employee</option>
+                        </select>
                     </div>
                     <button type="submit" class="action-btn">Submit Request</button>
                 </form>
@@ -127,6 +144,7 @@ function showDashboard() {
     
     setTimeout(() => {
         loadTabData();
+        updateNotificationIndicator();
     }, 100);
 }
 
@@ -140,6 +158,11 @@ function showTab(tabName) {
     document.getElementById(tabName + '-tab').classList.add('active');
     
     loadTabData(tabName);
+    
+    // Update notification indicator when switching tabs
+    if (tabName === 'notifications') {
+        updateNotificationIndicator();
+    }
 }
 
 function loadTabData(tabName = 'roster') {
@@ -149,6 +172,8 @@ function loadTabData(tabName = 'roster') {
         loadShiftExchange();
     } else if (tabName === 'leave') {
         loadLeaveRequests();
+    } else if (tabName === 'notifications') {
+        loadNotifications();
     }
 }
 
@@ -237,10 +262,55 @@ function openShiftExchange(rosterId) {
     document.getElementById('shift-roster-id').value = rosterId;
     document.getElementById('shift-date').value = formatDateInput(rosterItem.date);
     document.getElementById('shift-my-shift').value = rosterItem.shift;
+    
+    // Make fields readonly when coming from roster
+    document.getElementById('shift-date').readOnly = true;
+    document.getElementById('shift-my-shift').disabled = true;
+    
+    // Populate dropdown with employees working on the same date
+    const dropdown = document.getElementById('shift-with-emp');
+    dropdown.innerHTML = '<option value="">Select Employee</option>';
+    
+    const sameDateRoster = roster.filter(r => 
+        r.date === rosterItem.date && 
+        r.empId !== currentUser.id && 
+        r.status === 'assigned'
+    );
+    
+    sameDateRoster.forEach(r => {
+        const emp = employees.find(e => e.id === r.empId);
+        if (emp) {
+            dropdown.innerHTML += `<option value="${r.empId}">${emp.name} (${r.shift})</option>`;
+        }
+    });
+    
     showModal('shiftExchangeModal');
 }
 
 function openShiftExchangeModal() {
+    // Clear form fields
+    document.getElementById('shift-roster-id').value = '';
+    document.getElementById('shift-date').value = '';
+    document.getElementById('shift-my-shift').value = '';
+    
+    // Make fields editable for new requests
+    document.getElementById('shift-date').readOnly = false;
+    document.getElementById('shift-my-shift').disabled = false;
+    
+    // Populate dropdown with all employees except current user
+    const dropdown = document.getElementById('shift-with-emp');
+    dropdown.innerHTML = '<option value="">Select Employee</option>';
+    
+    // Get all other employees who have roster assignments
+    const otherEmployees = employees.filter(emp => 
+        emp.id !== currentUser.id && 
+        emp.role === 'employee'
+    );
+    
+    otherEmployees.forEach(emp => {
+        dropdown.innerHTML += `<option value="${emp.id}">${emp.name} (${emp.id})</option>`;
+    });
+    
     showModal('shiftExchangeModal');
 }
 
@@ -251,7 +321,27 @@ function openLeaveModal() {
 function submitShiftExchange() {
     const rosterId = document.getElementById('shift-roster-id').value;
     const withEmpId = document.getElementById('shift-with-emp').value;
-    const rosterItem = roster.find(r => r.id == rosterId);
+    const shiftDate = document.getElementById('shift-date').value;
+    const myShift = document.getElementById('shift-my-shift').value;
+    
+    if (!withEmpId) {
+        alert('Please select an employee to exchange with.');
+        return;
+    }
+    
+    // If no roster ID (from "New Shift Exchange" button), use form data
+    let rosterItem;
+    if (rosterId) {
+        rosterItem = roster.find(r => r.id == rosterId);
+    } else {
+        if (!shiftDate || !myShift) {
+            alert('Please fill in all fields.');
+            return;
+        }
+        rosterItem = { date: shiftDate, shift: myShift };
+    }
+    
+    const withEmp = employees.find(e => e.id === withEmpId);
     
     const request = {
         id: Date.now(),
@@ -260,7 +350,7 @@ function submitShiftExchange() {
         date: rosterItem.date,
         myShift: rosterItem.shift,
         withEmpId: withEmpId,
-        withEmpName: employees.find(e => e.id === withEmpId)?.name || 'Unknown',
+        withEmpName: withEmp.name,
         status: 'pending'
     };
     
@@ -452,6 +542,7 @@ function saveData() {
     localStorage.setItem('shiftRequests', JSON.stringify(shiftRequests));
     localStorage.setItem('leaveRequests', JSON.stringify(leaveRequests));
     localStorage.setItem('employees', JSON.stringify(employees));
+    localStorage.setItem('notifications', JSON.stringify(notifications));
 }
 
 function loadData() {
@@ -459,11 +550,13 @@ function loadData() {
     const savedShiftRequests = localStorage.getItem('shiftRequests');
     const savedLeaveRequests = localStorage.getItem('leaveRequests');
     const savedEmployees = localStorage.getItem('employees');
+    const savedNotifications = localStorage.getItem('notifications');
     
     if (savedRoster) roster = JSON.parse(savedRoster);
     if (savedShiftRequests) shiftRequests = JSON.parse(savedShiftRequests);
     if (savedLeaveRequests) leaveRequests = JSON.parse(savedLeaveRequests);
     if (savedEmployees) employees = JSON.parse(savedEmployees);
+    if (savedNotifications) notifications = JSON.parse(savedNotifications);
 }
 
 function showModal(modalId) {
@@ -479,5 +572,87 @@ function closeModal() {
 window.onclick = function(event) {
     if (event.target.classList.contains('modal')) {
         closeModal();
+    }
+}
+
+// Notification functions
+function loadNotifications() {
+    const container = document.getElementById('notifications-tab');
+    const myNotifications = notifications.filter(n => n.empId === currentUser.id);
+    
+    if (myNotifications.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #7f8c8d;">No notifications available.</p>';
+        return;
+    }
+    
+    let html = '<h3>Notifications</h3>';
+    
+    myNotifications.forEach(notification => {
+        html += `
+            <div class="notification-card ${notification.read ? 'read' : 'unread'}" onclick="markAsRead(${notification.id})">
+                <div class="notification-header">
+                    <h4>${notification.title}</h4>
+                    <span class="notification-date">${formatDate(notification.date)}</span>
+                    ${!notification.read ? '<span class="unread-dot"></span>' : ''}
+                </div>
+                <p class="notification-message">${notification.message}</p>
+                <small style="color: #7f8c8d;">From: Admin</small>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function markAsRead(notificationId) {
+    const notification = notifications.find(n => n.id === notificationId);
+    if (notification && !notification.read) {
+        notification.read = true;
+        saveData();
+        loadNotifications();
+        updateNotificationIndicator();
+    }
+}
+
+function updateNotificationIndicator() {
+    const indicator = document.getElementById('notification-indicator');
+    if (!indicator) return;
+    
+    const unreadCount = notifications.filter(n => n.empId === currentUser.id && !n.read).length;
+    
+    if (unreadCount > 0) {
+        indicator.textContent = unreadCount;
+        indicator.style.display = 'inline-block';
+        indicator.style.background = '#e74c3c';
+        indicator.style.color = 'white';
+        indicator.style.borderRadius = '50%';
+        indicator.style.padding = '2px 6px';
+        indicator.style.fontSize = '12px';
+        indicator.style.fontWeight = 'bold';
+        indicator.style.marginLeft = '5px';
+        indicator.style.minWidth = '18px';
+        indicator.style.textAlign = 'center';
+    } else {
+        indicator.style.display = 'none';
+    }
+}
+
+// Function to simulate admin sending notification (for testing)
+function sendNotificationFromAdmin(empId, title, message) {
+    const newNotification = {
+        id: Date.now(),
+        empId: empId,
+        title: title,
+        message: message,
+        date: new Date().toISOString().split('T')[0],
+        read: false
+    };
+    
+    notifications.push(newNotification);
+    saveData();
+    
+    // Update indicator if this is for current user
+    if (currentUser && empId === currentUser.id) {
+        updateNotificationIndicator();
     }
 }
