@@ -435,7 +435,15 @@
             <div style="text-align: center; margin-top: 20px; font-size: 14px; color: #7f8c8d;">
                 <p><strong>Trouble To Login: Contact To Admin</strong> </p>
                 <p><strong>Employees:</strong> Do Not Share Password.</p>
-                
+                <details style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px; text-align: left;">
+                    <summary style="cursor: pointer; font-weight: bold; color: #2c3e50;">🔍 Test Credentials (Click to expand)</summary>
+                    <div style="margin-top: 10px; font-size: 12px; line-height: 1.4;">
+                        <p><strong>Admin:</strong> ID: ADMIN01, Password: admin123</p>
+                        <p><strong>Employee:</strong> ID: AR0246, Password: 121212</p>
+                        <p><strong>Employee:</strong> ID: AR0230, Password: 121212</p>
+                        <button onclick="testLogin()" style="margin-top: 8px; padding: 5px 10px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">Fill Test Employee</button>
+                    </div>
+                </details>
             </div>
         </div>
 
@@ -735,6 +743,10 @@
 
         function initApp() {
             loadData();
+            
+            // Add debug info for troubleshooting
+            console.log('Available employees:', employees.map(e => ({ id: e.id, name: e.name, role: e.role })));
+            
             checkSessionValidity();
             if (currentUser && isSessionValid()) {
                 showDashboard();
@@ -751,6 +763,9 @@
                 document.getElementById('loginError').textContent = '';
             }
             setupEventListeners();
+            
+            // Add reset data button for debugging (only in development)
+            addDebugButton();
         }
 
         function setupEventListeners() {
@@ -786,21 +801,41 @@
 
         function handleLogin(e) {
             e.preventDefault();
-            const empId = document.getElementById('empId').value;
-            const password = document.getElementById('password').value;
+            const empId = document.getElementById('empId').value.trim().toUpperCase();
+            const password = document.getElementById('password').value.trim();
             const errorDiv = document.getElementById('loginError');
 
-            const user = employees.find(u => u.id === empId && u.password === password);
+            // Clear any previous errors
+            errorDiv.textContent = '';
+
+            // Validate input
+            if (!empId || !password) {
+                errorDiv.textContent = '❌ Please enter both Employee ID and Password';
+                return;
+            }
+
+            // Find user with case-insensitive ID matching
+            const user = employees.find(u => u.id.toUpperCase() === empId && u.password === password);
             
             if (user) {
-                currentUser = user;
+                currentUser = { ...user }; // Create a copy
                 currentUser.loginTime = Date.now();
                 saveData();
                 showDashboard();
                 startSessionTimer();
                 errorDiv.textContent = '';
+                
+                // Clear form
+                document.getElementById('empId').value = '';
+                document.getElementById('password').value = '';
             } else {
+                // More detailed error for debugging
+                console.log('Login failed for:', empId);
+                console.log('Available employees:', employees.map(e => ({ id: e.id, role: e.role })));
                 errorDiv.textContent = '❌ Invalid Employee ID or Password';
+                
+                // Clear password field for security
+                document.getElementById('password').value = '';
             }
         }
 
@@ -1907,6 +1942,36 @@
         document.addEventListener('click', resetSessionTimer);
         document.addEventListener('keypress', resetSessionTimer);
         document.addEventListener('scroll', resetSessionTimer);
+        
+        // Debug helper functions
+        function addDebugButton() {
+            // Add a small debug button in the login form
+            const loginCard = document.querySelector('.login-card');
+            if (loginCard && !document.getElementById('debugBtn')) {
+                const debugBtn = document.createElement('button');
+                debugBtn.id = 'debugBtn';
+                debugBtn.type = 'button';
+                debugBtn.textContent = 'Reset Data (Debug)';
+                debugBtn.style.cssText = 'width: 100%; padding: 8px; margin-top: 10px; background: #e74c3c; color: white; border: none; border-radius: 5px; font-size: 12px; cursor: pointer;';
+                debugBtn.onclick = resetAllData;
+                loginCard.appendChild(debugBtn);
+            }
+        }
+        
+        function resetAllData() {
+            if (confirm('This will reset all data including employees, rosters, and requests. Continue?')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+        
+        // Test login function for debugging
+        function testLogin() {
+            console.log('Testing login with sample employee...');
+            document.getElementById('empId').value = 'AR0246';
+            document.getElementById('password').value = '121212';
+            console.log('Sample credentials filled. Click Login button to test.');
+        }
     </script>
 </body>
 </html>
