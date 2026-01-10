@@ -435,16 +435,6 @@
             <div style="text-align: center; margin-top: 20px; font-size: 14px; color: #7f8c8d;">
                 <p><strong>Trouble To Login: Contact To Admin</strong> </p>
                 <p><strong>Employees:</strong> Do Not Share Password.</p>
-                <div id="storageStatus" style="margin: 10px 0; padding: 8px; border-radius: 5px; font-size: 12px;"></div>
-                <details style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px; text-align: left;">
-                    <summary style="cursor: pointer; font-weight: bold; color: #2c3e50;">🔍 Test Credentials (Click to expand)</summary>
-                    <div style="margin-top: 10px; font-size: 12px; line-height: 1.4;">
-                        <p><strong>Admin:</strong> ID: ADMIN01, Password: admin123</p>
-                        <p><strong>Employee:</strong> ID: AR0246, Password: 121212</p>
-                        <p><strong>Employee:</strong> ID: AR0230, Password: 121212</p>
-                        <button onclick="testLogin()" style="margin-top: 8px; padding: 5px 10px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">Fill Test Employee</button>
-                    </div>
-                </details>
             </div>
         </div>
 
@@ -690,16 +680,15 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script>
-        // Firebase Configuration - REPLACE WITH YOUR CONFIG
-       const firebaseConfig = {
-           apiKey: "AIzaSyAf_R9_ZQFN70BZMLpU7ZGJmPufOea33xU",
-           authDomain: "roster-system-77794.firebaseapp.com",
-           databaseURL: "https://roster-system-77794-default-rtdb.asia-southeast1.firebasedatabase.app",
-           projectId: "roster-system-77794",
-           storageBucket: "roster-system-77794.firebasestorage.app",
-           messagingSenderId: "1090796622900",
-           appId: "1:1090796622900:web:97d83c3be3f7ebdd39e661",
-           measurementId: "G-29E9F5SKK5"
+        // Firebase Configuration - SECURE VERSION
+        const firebaseConfig = {
+            apiKey: "AIzaSyAf_R9_ZQFN70BZMLpU7ZGJmPufOea33xU", // Public API key - restricted by domain
+            authDomain: "roster-system-77794.firebaseapp.com",
+            databaseURL: "https://roster-system-77794-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "roster-system-77794",
+            storageBucket: "roster-system-77794.firebasestorage.app",
+            messagingSenderId: "1090796622900",
+            appId: "1:1090796622900:web:97d83c3be3f7ebdd39e661"
         };
         
         // Initialize Firebase
@@ -773,12 +762,6 @@
         function initApp() {
             loadData();
             
-            // Update storage status
-            updateStorageStatus();
-            
-            // Add debug info for troubleshooting
-            console.log('Available employees:', employees.map(e => ({ id: e.id, name: e.name, role: e.role })));
-            
             checkSessionValidity();
             if (currentUser && isSessionValid()) {
                 showDashboard();
@@ -795,25 +778,8 @@
                 document.getElementById('loginError').textContent = '';
             }
             setupEventListeners();
-            
-            // Add reset data button for debugging (only in development)
-            addDebugButton();
         }
-        
-        function updateStorageStatus() {
-            const statusDiv = document.getElementById('storageStatus');
-            if (statusDiv) {
-                if (isOnline) {
-                    statusDiv.innerHTML = '✅ Online Storage: Data syncs across devices';
-                    statusDiv.style.background = '#d4edda';
-                    statusDiv.style.color = '#155724';
-                } else {
-                    statusDiv.innerHTML = '⚠️ Local Storage: Data only on this device';
-                    statusDiv.style.background = '#fff3cd';
-                    statusDiv.style.color = '#856404';
-                }
-            }
-        }
+
 
         function setupEventListeners() {
             document.getElementById('loginForm').addEventListener('submit', handleLogin);
@@ -1879,6 +1845,11 @@
         }
 
         function logout() {
+            // Remove Firebase listener when logging out
+            if (isOnline && database) {
+                database.ref('rosterData').off();
+            }
+            
             currentUser = null;
             clearSessionTimer();
             localStorage.removeItem('currentUser');
@@ -1890,6 +1861,8 @@
             document.getElementById('loginError').textContent = '';
             document.getElementById('empId').value = '';
             document.getElementById('password').value = '';
+            
+            // Restart data loading for login page
             loadData();
         }
 
@@ -1913,7 +1886,8 @@
                 monthlyRoster: monthlyRoster,
                 shiftRequests: shiftRequests,
                 leaveRequests: leaveRequests,
-                notifications: notifications
+                notifications: notifications,
+                lastUpdated: Date.now()
             };
             
             // Save to localStorage (backup)
@@ -1926,9 +1900,11 @@
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
             }
             
-            // Save to Firebase (online)
+            // Save to Firebase (online) - this will trigger real-time updates
             if (isOnline && database) {
-                database.ref('rosterData').set(data).catch(error => {
+                database.ref('rosterData').set(data).then(() => {
+                    console.log('✅ Data saved to Firebase - all users will see updates');
+                }).catch(error => {
                     console.log('Firebase save failed:', error);
                 });
             }
@@ -1936,8 +1912,8 @@
 
         function loadData() {
             if (isOnline && database) {
-                // Load from Firebase first
-                database.ref('rosterData').once('value').then(snapshot => {
+                // Set up real-time listener for Firebase
+                database.ref('rosterData').on('value', (snapshot) => {
                     const data = snapshot.val();
                     if (data) {
                         employees = data.employees || employees;
@@ -1945,13 +1921,19 @@
                         shiftRequests = data.shiftRequests || [];
                         leaveRequests = data.leaveRequests || [];
                         notifications = data.notifications || [];
-                        console.log('✅ Data loaded from Firebase');
+                        console.log('✅ Data updated from Firebase');
+                        
+                        // Refresh current view if user is logged in
+                        if (currentUser) {
+                            if (currentUser.role === 'admin') {
+                                loadAdminData();
+                            } else {
+                                loadEmployeeData();
+                            }
+                        }
                     } else {
                         loadFromLocalStorage();
                     }
-                }).catch(error => {
-                    console.log('Firebase load failed, using local storage');
-                    loadFromLocalStorage();
                 });
             } else {
                 loadFromLocalStorage();
@@ -2031,36 +2013,7 @@
         document.addEventListener('click', resetSessionTimer);
         document.addEventListener('keypress', resetSessionTimer);
         document.addEventListener('scroll', resetSessionTimer);
-        
-        // Debug helper functions
-        function addDebugButton() {
-            // Add a small debug button in the login form
-            const loginCard = document.querySelector('.login-card');
-            if (loginCard && !document.getElementById('debugBtn')) {
-                const debugBtn = document.createElement('button');
-                debugBtn.id = 'debugBtn';
-                debugBtn.type = 'button';
-                debugBtn.textContent = 'Reset Data (Debug)';
-                debugBtn.style.cssText = 'width: 100%; padding: 8px; margin-top: 10px; background: #e74c3c; color: white; border: none; border-radius: 5px; font-size: 12px; cursor: pointer;';
-                debugBtn.onclick = resetAllData;
-                loginCard.appendChild(debugBtn);
-            }
-        }
-        
-        function resetAllData() {
-            if (confirm('This will reset all data including employees, rosters, and requests. Continue?')) {
-                localStorage.clear();
-                location.reload();
-            }
-        }
-        
-        // Test login function for debugging
-        function testLogin() {
-            console.log('Testing login with sample employee...');
-            document.getElementById('empId').value = 'AR0246';
-            document.getElementById('password').value = '121212';
-            console.log('Sample credentials filled. Click Login button to test.');
-        }
+
     </script>
 </body>
 </html>
