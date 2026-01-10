@@ -221,19 +221,21 @@ function loadShiftExchange() {
     const myRequests = shiftRequests.filter(r => r.fromEmpId === currentUser.id);
     
     container.innerHTML = `
-        <h3>Shift Exchange Requests</h3>
+        <h3>My Shift Exchange Requests</h3>
         ${myRequests.length > 0 ? 
             myRequests.map(req => `
                 <div class="request-card">
                     <p><strong>Date:</strong> ${formatDate(req.date)}</p>
                     <p><strong>My Shift:</strong> ${req.myShift}</p>
-                    <p><strong>With:</strong> ${req.withEmpName} (${req.withEmpId})</p>
+                    <p><strong>Exchange With:</strong> ${req.withEmpName} (${req.withEmpId})</p>
+                    <p><strong>Their Shift:</strong> ${req.withEmpShift || 'Not specified'}</p>
                     <p><strong>Status:</strong> <span class="status-${req.status}">${req.status.toUpperCase()}</span></p>
+                    <p><strong>Request Date:</strong> ${formatDate(req.requestDate || req.date)}</p>
                 </div>
             `).join('') : 
-            '<p>No pending shift exchange requests.</p>'
+            '<p style="text-align: center; color: #7f8c8d;">No shift exchange requests found.</p>'
         }
-        <button class="action-btn" onclick="openShiftExchangeModal()">New Shift Exchange</button>
+        <button class="action-btn" onclick="openShiftExchangeModal()">New Shift Exchange Request</button>
     `;
 }
 
@@ -267,20 +269,28 @@ function openShiftExchange(rosterId) {
     document.getElementById('shift-date').readOnly = true;
     document.getElementById('shift-my-shift').disabled = true;
     
-    // Populate dropdown with employees working on the same date
+    // Populate dropdown with ALL other employees (not just same date)
     const dropdown = document.getElementById('shift-with-emp');
     dropdown.innerHTML = '<option value="">Select Employee</option>';
     
-    const sameDateRoster = roster.filter(r => 
-        r.date === rosterItem.date && 
-        r.empId !== currentUser.id && 
-        r.status === 'assigned'
+    // Get all employees except current user
+    const otherEmployees = employees.filter(emp => 
+        emp.id !== currentUser.id && 
+        emp.role === 'employee'
     );
     
-    sameDateRoster.forEach(r => {
-        const emp = employees.find(e => e.id === r.empId);
-        if (emp) {
-            dropdown.innerHTML += `<option value="${r.empId}">${emp.name} (${r.shift})</option>`;
+    otherEmployees.forEach(emp => {
+        // Check if employee has roster on same date
+        const empRoster = roster.find(r => 
+            r.date === rosterItem.date && 
+            r.empId === emp.id && 
+            r.status === 'assigned'
+        );
+        
+        if (empRoster) {
+            dropdown.innerHTML += `<option value="${emp.id}">${emp.name} (${empRoster.shift} Shift)</option>`;
+        } else {
+            dropdown.innerHTML += `<option value="${emp.id}">${emp.name} (No shift assigned)</option>`;
         }
     });
     
@@ -301,7 +311,7 @@ function openShiftExchangeModal() {
     const dropdown = document.getElementById('shift-with-emp');
     dropdown.innerHTML = '<option value="">Select Employee</option>';
     
-    // Get all other employees who have roster assignments
+    // Get all other employees
     const otherEmployees = employees.filter(emp => 
         emp.id !== currentUser.id && 
         emp.role === 'employee'
@@ -329,37 +339,68 @@ function submitShiftExchange() {
         return;
     }
     
-    // If no roster ID (from "New Shift Exchange" button), use form data
-    let rosterItem;
-    if (rosterId) {
-        rosterItem = roster.find(r => r.id == rosterId);
-    } else {
-        if (!shiftDate || !myShift) {
-            alert('Please fill in all fields.');
-            return;
-        }
-        rosterItem = { date: shiftDate, shift: myShift };
+    if (!shiftDate || !myShift) {
+        alert('Please fill in all required fields.');
+        return;
     }
     
+    // Find the employee to exchange with
     const withEmp = employees.find(e => e.id === withEmpId);
+    if (!withEmp) {
+        alert('Selected employee not found.');
+        return;
+    }
+    
+    // Check if there's already a pending request for this date
+    const existingRequest = shiftRequests.find(r => 
+        r.fromEmpId === currentUser.id && 
+        r.date === shiftDate && 
+        r.status === 'pending'
+    );
+    
+    if (existingRequest) {
+        alert('You already have a pending shift exchange request for this date.');
+        return;
+    }
+    
+    // Find target employee's shift for the same date (if any)
+    const targetEmpRoster = roster.find(r => 
+        r.empId === withEmpId && 
+        r.date === shiftDate && 
+        r.status === 'assigned'
+    );
     
     const request = {
         id: Date.now(),
         fromEmpId: currentUser.id,
         fromEmpName: currentUser.name,
-        date: rosterItem.date,
-        myShift: rosterItem.shift,
+        date: shiftDate,
+        myShift: myShift,
         withEmpId: withEmpId,
         withEmpName: withEmp.name,
-        status: 'pending'
+        withEmpShift: targetEmpRoster ? targetEmpRoster.shift : 'No shift assigned',
+        status: 'pending',
+        requestDate: new Date().toISOString().split('T')[0]
     };
     
     shiftRequests.push(request);
+    
+    // Add notification to the target employee
+    const notification = {
+        id: Date.now() + 1,
+        empId: withEmpId,
+        title: 'Shift Exchange Request',
+        message: `${currentUser.name} has requested to exchange shifts with you for ${formatDate(shiftDate)}. Please check with management.`,
+        date: new Date().toISOString().split('T')[0],
+        read: false
+    };
+    notifications.push(notification);
+    
     saveData();
     closeModal();
     loadTabData('shift-exchange');
     
-    alert('Shift exchange request submitted for manager approval!');
+    alert(`Shift exchange request sent to ${withEmp.name} and submitted for manager approval!`);
 }
 
 function submitLeaveRequest() {
@@ -441,16 +482,18 @@ function generateRosterTable() {
 }
 
 function generateShiftRequestsTable() {
-    if (shiftRequests.length === 0) return '<p>No pending shift exchange requests.</p>';
+    if (shiftRequests.length === 0) return '<p>No shift exchange requests found.</p>';
     
     let html = `
         <table class="roster-table">
             <thead>
                 <tr>
-                    <th>From</th>
+                    <th>From Employee</th>
                     <th>Date</th>
-                    <th>Shift</th>
-                    <th>With</th>
+                    <th>From Shift</th>
+                    <th>To Employee</th>
+                    <th>To Shift</th>
+                    <th>Status</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -460,13 +503,17 @@ function generateShiftRequestsTable() {
     shiftRequests.forEach(req => {
         html += `
             <tr>
-                <td>${req.fromEmpName} (${req.fromEmpId})</td>
+                <td>${req.fromEmpName}<br><small>(${req.fromEmpId})</small></td>
                 <td>${formatDate(req.date)}</td>
                 <td>${req.myShift}</td>
-                <td>${req.withEmpName} (${req.withEmpId})</td>
+                <td>${req.withEmpName}<br><small>(${req.withEmpId})</small></td>
+                <td>${req.withEmpShift || 'Not assigned'}</td>
+                <td><span class="status-${req.status}">${req.status.toUpperCase()}</span></td>
                 <td>
-                    <button class="action-btn" onclick="approveShift(${req.id}, true)">Approve</button>
-                    <button class="action-btn" style="background: #e74c3c;" onclick="approveShift(${req.id}, false)">Reject</button>
+                    ${req.status === 'pending' ? `
+                        <button class="action-btn" onclick="approveShift(${req.id}, true)">Approve</button>
+                        <button class="action-btn" style="background: #e74c3c;" onclick="approveShift(${req.id}, false)">Reject</button>
+                    ` : `<span class="status-${req.status}">${req.status.toUpperCase()}</span>`}
                 </td>
             </tr>
         `;
