@@ -653,6 +653,11 @@
         </div>
     </div>
 
+    <!-- Online Storage Notice -->
+    <div style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 5px; font-size: 12px; z-index: 1000;">
+        🌐 Online Storage Only - No Local Data
+    </div>
+
     <!-- Modals -->
     <div id="shiftExchangeModal" class="modal">
         <div class="modal-content">
@@ -786,6 +791,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
+        // ONLINE STORAGE ONLY - NO LOCAL STORAGE POLICY
+        // This system uses Firebase Realtime Database exclusively
+        // No data is stored locally on user devices for security and consistency
+        
         // Firebase Configuration - SECURE VERSION
         // API key loaded from secure configuration
         const firebaseConfig = window.FIREBASE_CONFIG || {
@@ -798,7 +807,7 @@
             appId: "1:1090796622900:web:97d83c3be3f7ebdd39e661"
         };
         
-        // Initialize Firebase
+        // Initialize Firebase - ONLINE STORAGE ONLY
         let database = null;
         let isOnline = false;
         
@@ -806,10 +815,10 @@
             firebase.initializeApp(firebaseConfig);
             database = firebase.database();
             isOnline = true;
-            console.log('✅ Firebase connected - Online storage enabled');
+            console.log('✅ Firebase connected - ONLINE STORAGE ONLY (No Local Storage)');
         } catch (error) {
-            console.log('⚠️ Firebase connection failed');
-            alert('❌ Cannot connect to server. Please check your internet connection.');
+            console.log('⚠️ Firebase connection failed - System requires online storage');
+            alert('❌ Cannot connect to server. This system requires internet connection for online storage only.');
             isOnline = false;
         }
         // Data Storage
@@ -886,9 +895,15 @@
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
             
+            // ENFORCE ONLINE-ONLY STORAGE - NO LOCAL STORAGE ALLOWED
             if (!isOnline) {
-                alert('❌ Cannot connect to Firebase. Please check your internet connection and refresh the page.');
+                alert('❌ SYSTEM REQUIRES INTERNET CONNECTION\n\nThis roster system uses ONLINE STORAGE ONLY.\nNo data is stored locally on your device.\nPlease check your internet connection and refresh the page.');
                 return;
+            }
+            
+            // Disable any potential local storage usage
+            if (typeof(Storage) !== "undefined") {
+                console.log('⚠️ Local storage detected but DISABLED - Using Firebase online storage only');
             }
             
             loadData();
@@ -1115,10 +1130,13 @@
                         .forEach(emp => {
                             const option = document.createElement('option');
                             option.value = emp.id;
-                            option.textContent = emp.name;
+                            option.textContent = `${emp.id} - ${emp.name}`;
                             empDropdown.appendChild(option);
                         });
                 }
+                
+                // Refresh shift requests data when tab is opened
+                loadEmployeeShiftRequests();
             }
             
             // Hide notification badge when notifications tab is clicked
@@ -1269,119 +1287,156 @@
 
         function loadEmployeeShiftRequests() {
             const container = document.getElementById('empShiftRequests');
-            const myRequests = shiftRequests.filter(r => r.fromEmpId === currentUser.id).slice(-2); // Only last 2 entries
+            const myRequests = shiftRequests.filter(r => r.fromEmpId === currentUser.id);
             
             if (myRequests.length === 0) {
-                container.innerHTML = '<p>No shift exchange requests sent.</p>';
-                return;
+                container.innerHTML = '<div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 10px; margin: 10px 0;"><p style="color: #7f8c8d;">📤 No shift exchange requests sent</p><p style="color: #95a5a6; font-size: 14px;">Click "New Shift Exchange Request" to send a request to another employee</p></div>';
+            } else {
+                let html = '';
+                // Show newest requests first
+                myRequests.sort((a, b) => new Date(b.requestedOn) - new Date(a.requestedOn)).forEach(req => {
+                    let statusText = '';
+                    let statusClass = '';
+                    
+                    if (req.status === 'pending_employee') {
+                        statusText = '⏳ WAITING FOR EMPLOYEE RESPONSE';
+                        statusClass = 'status-pending';
+                    } else if (req.status === 'employee_accepted') {
+                        statusText = '✅ EMPLOYEE ACCEPTED - WAITING FOR ADMIN';
+                        statusClass = 'status-pending';
+                    } else if (req.status === 'employee_rejected') {
+                        statusText = '❌ EMPLOYEE REJECTED';
+                        statusClass = 'status-rejected';
+                    } else if (req.status === 'admin_approved') {
+                        statusText = '✅ APPROVED BY ADMIN';
+                        statusClass = 'status-approved';
+                    } else if (req.status === 'admin_rejected') {
+                        statusText = '❌ REJECTED BY ADMIN';
+                        statusClass = 'status-rejected';
+                    }
+                    
+                    html += `<div class="request-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4 style="margin: 0; color: #2c3e50;">🔄 My Request to ${req.withEmpName}</h4>
+                            <span style="font-size: 12px; color: #7f8c8d;">${formatDateTime(req.requestedOn)}</span>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 8px;">
+                            <p><strong>📅 Date:</strong> ${formatDate(req.date)}</p>
+                            <p><strong>👤 To Employee:</strong> ${req.withEmpName} (${req.withEmpId})</p>
+                            <p><strong>🔄 Exchange:</strong> My <span style="background: #3498db; color: white; padding: 2px 8px; border-radius: 4px;">${req.myShift}</span> shift → Their <span style="background: #27ae60; color: white; padding: 2px 8px; border-radius: 4px;">${req.toShift}</span> shift</p>
+                            <p><strong>📊 Status:</strong> <span class="${statusClass}">${statusText}</span></p>
+                        </div>
+                    </div>`;
+                });
+                container.innerHTML = html;
             }
             
-            let html = '';
-            myRequests.forEach(req => {
-                let statusText = '';
-                let statusClass = '';
-                
-                if (req.status === 'pending_employee') {
-                    statusText = 'WAITING FOR EMPLOYEE RESPONSE';
-                    statusClass = 'status-pending';
-                } else if (req.status === 'employee_accepted') {
-                    statusText = 'EMPLOYEE ACCEPTED - WAITING FOR ADMIN';
-                    statusClass = 'status-pending';
-                } else if (req.status === 'employee_rejected') {
-                    statusText = 'EMPLOYEE REJECTED';
-                    statusClass = 'status-rejected';
-                } else if (req.status === 'admin_approved') {
-                    statusText = 'APPROVED BY ADMIN';
-                    statusClass = 'status-approved';
-                } else if (req.status === 'admin_rejected') {
-                    statusText = 'REJECTED BY ADMIN';
-                    statusClass = 'status-rejected';
-                }
-                
-                html += `<div class="request-card">
-                    <p><strong>Requested On:</strong> ${formatDateTime(req.requestedOn)}</p>
-                    <p><strong>Date:</strong> ${formatDate(req.date)}</p>
-                    <p><strong>My Shift:</strong> ${req.myShift}</p>
-                    <p><strong>With:</strong> ${req.withEmpName}</p>
-                    <p><strong>To Shift:</strong> ${req.toShift}</p>
-                    <p><strong>Status:</strong> <span class="${statusClass}">${statusText}</span></p>
-                </div>`;
-            });
-            container.innerHTML = html;
-            
-            // Load incoming requests
+            // ALWAYS load incoming requests - this is critical
             loadIncomingRequests();
         }
         
         function loadIncomingRequests() {
             const container = document.getElementById('empIncomingRequests');
-            console.log('Current user ID:', currentUser.id);
+            if (!container) {
+                console.error('empIncomingRequests container not found');
+                return;
+            }
+            
+            console.log('Loading incoming requests for user:', currentUser.id);
             console.log('All shift requests:', shiftRequests);
-            const incomingRequests = shiftRequests.filter(r => r.withEmpId === currentUser.id).slice(-2);
-            console.log('Incoming requests for', currentUser.id, ':', incomingRequests);
+            
+            // Filter requests where current user is the target (withEmpId)
+            const incomingRequests = shiftRequests.filter(r => {
+                console.log(`Checking request: fromEmpId=${r.fromEmpId}, withEmpId=${r.withEmpId}, currentUser=${currentUser.id}`);
+                return r.withEmpId === currentUser.id;
+            });
+            
+            console.log('Incoming requests found:', incomingRequests.length);
             
             if (incomingRequests.length === 0) {
-                container.innerHTML = '<p>No incoming shift exchange requests.</p>';
+                container.innerHTML = '<div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 10px; margin: 10px 0;"><p style="color: #7f8c8d;">📥 No incoming shift exchange requests</p><p style="color: #95a5a6; font-size: 14px;">Other employees can send you shift exchange requests here</p></div>';
                 return;
             }
             
             let html = '';
-            incomingRequests.forEach(req => {
+            // Show newest requests first
+            incomingRequests.sort((a, b) => new Date(b.requestedOn) - new Date(a.requestedOn)).forEach(req => {
                 let statusText = '';
                 let statusClass = '';
                 
                 if (req.status === 'pending_employee') {
-                    statusText = 'WAITING FOR YOUR RESPONSE';
+                    statusText = '⏳ WAITING FOR YOUR RESPONSE';
                     statusClass = 'status-pending';
                 } else if (req.status === 'employee_accepted') {
-                    statusText = 'YOU ACCEPTED - WAITING FOR ADMIN';
+                    statusText = '✅ YOU ACCEPTED - WAITING FOR ADMIN';
                     statusClass = 'status-pending';
                 } else if (req.status === 'employee_rejected') {
-                    statusText = 'YOU REJECTED';
+                    statusText = '❌ YOU REJECTED';
                     statusClass = 'status-rejected';
                 } else if (req.status === 'admin_approved') {
-                    statusText = 'APPROVED BY ADMIN';
+                    statusText = '✅ APPROVED BY ADMIN';
                     statusClass = 'status-approved';
                 } else if (req.status === 'admin_rejected') {
-                    statusText = 'REJECTED BY ADMIN';
+                    statusText = '❌ REJECTED BY ADMIN';
                     statusClass = 'status-rejected';
                 }
                 
-                html += `<div class="request-card">
-                    <p><strong>Requested On:</strong> ${formatDateTime(req.requestedOn)}</p>
-                    <p><strong>Date:</strong> ${formatDate(req.date)}</p>
-                    <p><strong>From:</strong> ${req.fromEmpName}</p>
-                    <p><strong>Their Shift:</strong> ${req.myShift}</p>
-                    <p><strong>To Shift:</strong> ${req.toShift || req.withEmpShift || 'N/A'}</p>
-                    <p><strong>Status:</strong> <span class="${statusClass}">${statusText}</span></p>`;
+                html += `<div class="request-card" style="${req.status === 'pending_employee' ? 'border-left-color: #f39c12; background: #fff9e6;' : ''}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h4 style="margin: 0; color: #2c3e50;">🔄 Shift Exchange Request</h4>
+                        <span style="font-size: 12px; color: #7f8c8d;">${formatDateTime(req.requestedOn)}</span>
+                    </div>
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                        <p><strong>📅 Date:</strong> ${formatDate(req.date)}</p>
+                        <p><strong>👤 From Employee:</strong> ${req.fromEmpName} (${req.fromEmpId})</p>
+                        <p><strong>🔄 They want to exchange:</strong> Their <span style="background: #3498db; color: white; padding: 2px 8px; border-radius: 4px;">${req.myShift}</span> shift → Your <span style="background: #27ae60; color: white; padding: 2px 8px; border-radius: 4px;">${req.toShift}</span> shift</p>
+                        <p><strong>📊 Status:</strong> <span class="${statusClass}">${statusText}</span></p>
+                    </div>`;
                 
                 if (req.status === 'pending_employee') {
-                    html += `<div style="margin-top: 15px;">
-                        <button class="btn btn-success" onclick="respondToRequest(${req.id}, 'accept')" style="width: auto; padding: 8px 16px; margin-right: 10px;">✅ Accept</button>
-                        <button class="btn btn-danger" onclick="respondToRequest(${req.id}, 'reject')" style="width: auto; padding: 8px 16px;">❌ Reject</button>
+                    html += `<div style="margin-top: 15px; text-align: center;">
+                        <button class="btn btn-success" onclick="respondToRequest(${req.id}, 'accept')" style="width: auto; padding: 10px 20px; margin-right: 10px; font-weight: bold;">✅ Accept Exchange</button>
+                        <button class="btn btn-danger" onclick="respondToRequest(${req.id}, 'reject')" style="width: auto; padding: 10px 20px; font-weight: bold;">❌ Reject Exchange</button>
                     </div>`;
                 }
                 
                 html += `</div>`;
             });
             container.innerHTML = html;
+            console.log('Incoming requests loaded successfully');
         }
         
         function respondToRequest(requestId, response) {
             const request = shiftRequests.find(r => r.id === requestId);
-            if (request) {
-                if (response === 'accept') {
-                    request.status = 'employee_accepted';
-                    request.employeeResponse = 'accepted';
-                    alert('✅ Request accepted! Now waiting for admin approval.');
-                } else {
-                    request.status = 'employee_rejected';
-                    request.employeeResponse = 'rejected';
-                    alert('❌ Request rejected.');
-                }
-                saveData();
-                loadEmployeeShiftRequests();
+            if (!request) {
+                alert('❌ Request not found!');
+                return;
             }
+            
+            // Verify this request is actually for the current user
+            if (request.withEmpId !== currentUser.id) {
+                alert('❌ You are not authorized to respond to this request!');
+                return;
+            }
+            
+            if (response === 'accept') {
+                request.status = 'employee_accepted';
+                request.employeeResponse = 'accepted';
+                request.employeeResponseDate = new Date().toISOString();
+                alert('✅ Shift exchange request accepted!\n\nThe request has been forwarded to admin for final approval.\nYou will be notified once admin makes a decision.');
+            } else {
+                request.status = 'employee_rejected';
+                request.employeeResponse = 'rejected';
+                request.employeeResponseDate = new Date().toISOString();
+                alert('❌ Shift exchange request rejected.\n\nThe requesting employee has been notified of your decision.');
+            }
+            
+            console.log('Request response updated:', request);
+            saveData();
+            
+            // Refresh both sections to show updated status
+            loadEmployeeShiftRequests();
+            loadIncomingRequests();
         }
 
         function openLeaveModal() {
@@ -1412,18 +1467,36 @@
             const toShift = document.getElementById('exchange-to-shift').value;
             
             if (!date || !myShift || !withEmpId || !toShift) {
-                alert('Please fill all fields');
+                alert('❌ Please fill all fields!');
+                return;
+            }
+            
+            if (withEmpId === currentUser.id) {
+                alert('❌ You cannot send a shift exchange request to yourself!');
                 return;
             }
             
             const withEmp = employees.find(e => e.id === withEmpId);
             if (!withEmp) {
-                alert('Selected employee not found');
+                alert('❌ Selected employee not found!');
+                return;
+            }
+            
+            // Check if there's already a pending request for the same date
+            const existingRequest = shiftRequests.find(r => 
+                r.fromEmpId === currentUser.id && 
+                r.withEmpId === withEmpId && 
+                r.date === date && 
+                (r.status === 'pending_employee' || r.status === 'employee_accepted')
+            );
+            
+            if (existingRequest) {
+                alert('❌ You already have a pending shift exchange request with this employee for this date!');
                 return;
             }
             
             const request = {
-                id: Date.now(),
+                id: Date.now() + Math.random(), // Ensure unique ID
                 fromEmpId: currentUser.id,
                 fromEmpName: currentUser.name,
                 date: date,
@@ -1435,11 +1508,18 @@
                 requestedOn: new Date().toISOString()
             };
             
+            console.log('Creating new shift exchange request:', request);
             shiftRequests.push(request);
             saveData();
             closeModal();
+            
+            // Clear form
+            document.getElementById('shiftExchangeForm').reset();
+            
+            // Refresh the display
             loadEmployeeShiftRequests();
-            alert('✅ Shift exchange request sent successfully!');
+            
+            alert(`✅ Shift exchange request sent successfully!\n\nRequest Details:\n• Date: ${formatDate(date)}\n• Your ${myShift} shift → ${withEmp.name}'s ${toShift} shift\n\nThe employee will be notified and can accept or reject your request.`);
         }
 
         function handleLeaveSubmit(e) {
@@ -2037,10 +2117,12 @@
             if (isOnline && database) {
                 database.ref('rosterData').off();
                 if (currentUser) {
+                    // Clear session from Firebase only - NO LOCAL STORAGE
                     database.ref('sessions/' + currentUser.id).remove();
                 }
             }
             
+            // Clear all session data from memory only - NO LOCAL STORAGE
             currentUser = null;
             clearSessionTimer();
             document.getElementById('loginSection').style.display = 'block';
@@ -2095,7 +2177,7 @@
                 lastUpdated: Date.now()
             };
             
-            // Save current user session separately
+            // Save current user session to Firebase only - NO LOCAL STORAGE
             if (currentUser) {
                 database.ref('sessions/' + currentUser.id).set({
                     user: currentUser,
@@ -2103,9 +2185,9 @@
                 });
             }
             
-            // Save to Firebase only
+            // Save to Firebase ONLY - NO LOCAL STORAGE USED
             database.ref('rosterData').set(data).then(() => {
-                console.log('✅ Data saved to Firebase successfully');
+                console.log('✅ Data saved to Firebase (online storage only)');
             }).catch(error => {
                 console.error('❌ Firebase save failed:', error);
                 alert('❌ Failed to save data. Please check your internet connection.');
@@ -2118,7 +2200,7 @@
                 return;
             }
             
-            // Load main data from Firebase
+            // Load ALL data from Firebase ONLY - NO LOCAL STORAGE
             database.ref('rosterData').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
@@ -2127,7 +2209,7 @@
                     shiftRequests = data.shiftRequests || [];
                     leaveRequests = data.leaveRequests || [];
                     notifications = data.notifications || [];
-                    console.log('✅ Data loaded from Firebase, notifications count:', notifications.length);
+                    console.log('✅ Data loaded from Firebase (online storage only), notifications count:', notifications.length);
                     
                     // Refresh current view if user is logged in
                     if (currentUser) {
@@ -2143,22 +2225,9 @@
                         }
                     }
                 } else {
-                    console.log('⚠️ No data found in Firebase');
+                    console.log('⚠️ No data found in Firebase - using default data');
                 }
             });
-            
-            // Load current user session
-            const urlParams = new URLSearchParams(window.location.search);
-            const sessionId = urlParams.get('session');
-            if (sessionId) {
-                database.ref('sessions/' + sessionId).once('value', (snapshot) => {
-                    const sessionData = snapshot.val();
-                    if (sessionData && sessionData.user) {
-                        currentUser = sessionData.user;
-                        console.log('✅ Session restored for:', currentUser.name);
-                    }
-                });
-            }
         }
 
         // Session Management Functions
