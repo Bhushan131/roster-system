@@ -856,18 +856,7 @@
         }; // Sample roster data
         let shiftRequests = [];
         let leaveRequests = [];
-        let notifications = [
-            {
-                id: 1,
-                message: "Welcome to IC 07 GAVNER TOLL PLAZA Employee Portal. Please check your monthly roster and submit any shift exchange or leave requests as needed.",
-                date: new Date().toISOString()
-            },
-            {
-                id: 2,
-                message: "Monthly roster for January 2025 has been uploaded. Please verify your shift assignments and contact admin if there are any discrepancies.",
-                date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() // Yesterday
-            }
-        ];
+        let notifications = [];
 
         let lastDataCheck = 0;
         
