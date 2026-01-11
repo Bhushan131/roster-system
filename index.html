@@ -778,7 +778,7 @@
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
+
     <script>
         // Firebase Configuration - SECURE VERSION
         // API key loaded from secure configuration
@@ -794,18 +794,16 @@
         
         // Initialize Firebase
         let database = null;
-        let messaging = null;
         let isOnline = false;
         
         try {
             firebase.initializeApp(firebaseConfig);
             database = firebase.database();
-            messaging = firebase.messaging();
             isOnline = true;
             console.log('✅ Firebase connected - Online storage enabled');
-            initializePushNotifications();
         } catch (error) {
-            console.log('⚠️ Firebase not configured - Using local storage only');
+            console.log('⚠️ Firebase connection failed');
+            alert('❌ Cannot connect to server. Please check your internet connection.');
             isOnline = false;
         }
         // Data Storage
@@ -860,22 +858,7 @@
         let leaveRequests = [];
         let notifications = [];
 
-        let lastDataCheck = 0;
-        
-        function startLocalStoragePolling() {
-            setInterval(() => {
-                if (currentUser && currentUser.role === 'employee') {
-                    const lastUpdate = localStorage.getItem('lastDataUpdate');
-                    if (lastUpdate && parseInt(lastUpdate) > lastDataCheck) {
-                        lastDataCheck = parseInt(lastUpdate);
-                        loadFromLocalStorage();
-                        loadEmployeeData();
-                        updateNotificationBadge();
-                        console.log('📱 Employee data refreshed from localStorage');
-                    }
-                }
-            }, 2000); // Check every 2 seconds
-        }
+
 
         // Initialize
         document.addEventListener('DOMContentLoaded', initApp);
@@ -884,6 +867,11 @@
             // Clean URL if it has trailing ?
             if (window.location.search === '?') {
                 window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            
+            if (!isOnline) {
+                alert('❌ Cannot connect to Firebase. Please check your internet connection and refresh the page.');
+                return;
             }
             
             loadData();
@@ -895,7 +883,6 @@
             } else {
                 if (currentUser) {
                     currentUser = null;
-                    localStorage.removeItem('currentUser');
                 }
                 document.getElementById('loginSection').style.display = 'block';
                 document.getElementById('employeeDashboard').style.display = 'none';
@@ -904,9 +891,6 @@
                 document.getElementById('loginError').textContent = '';
             }
             setupEventListeners();
-            
-            // Start polling for localStorage updates
-            startLocalStoragePolling();
         }
 
 
@@ -1522,7 +1506,6 @@
             
             console.log('Loading employee notifications, count:', notifications.length);
             
-            // Update notification badge
             updateNotificationBadge();
             
             if (notifications.length === 0) {
@@ -1532,9 +1515,12 @@
             
             let html = '';
             notifications.slice().reverse().forEach(notif => {
-                html += `<div class="request-card">
-                    <p><strong>Date:</strong> ${formatDate(notif.date)}</p>
-                    <p><strong>Message:</strong> ${notif.message}</p>
+                html += `<div class="notification-card">
+                    <div class="notification-header">
+                        <h4>IC-07 GAVNER TOLL PLAZA</h4>
+                        <span class="notification-date">${formatDateTime(notif.date)}</span>
+                    </div>
+                    <p class="notification-message">${notif.message}</p>
                 </div>`;
             });
             container.innerHTML = html;
@@ -2012,11 +1998,7 @@
             notifications.push(notification);
             console.log('Total notifications now:', notifications.length);
             
-            // Save data first to trigger Firebase update
             saveData();
-            
-            // Send push notification
-            sendPushNotification('IC-07 GAVNER TOLL PLAZA', message);
             
             document.getElementById('notificationText').value = '';
             loadSentNotifications();
@@ -2042,14 +2024,15 @@
         }
 
         function logout() {
-            // Remove Firebase listener when logging out
             if (isOnline && database) {
                 database.ref('rosterData').off();
+                if (currentUser) {
+                    database.ref('sessions/' + currentUser.id).remove();
+                }
             }
             
             currentUser = null;
             clearSessionTimer();
-            localStorage.removeItem('currentUser');
             document.getElementById('loginSection').style.display = 'block';
             document.getElementById('employeeDashboard').style.display = 'none';
             document.getElementById('adminDashboard').style.display = 'none';
@@ -2059,7 +2042,6 @@
             document.getElementById('empId').value = '';
             document.getElementById('password').value = '';
             
-            // Restart data loading for login page
             loadData();
         }
 
@@ -2089,6 +2071,11 @@
         }
 
         function saveData() {
+            if (!isOnline || !database) {
+                alert('❌ Cannot save data. No internet connection.');
+                return;
+            }
+            
             const data = {
                 employees: employees,
                 monthlyRoster: monthlyRoster,
@@ -2098,80 +2085,70 @@
                 lastUpdated: Date.now()
             };
             
-            // Save to localStorage (backup)
-            localStorage.setItem('employees', JSON.stringify(employees));
-            localStorage.setItem('monthlyRoster', JSON.stringify(monthlyRoster));
-            localStorage.setItem('shiftRequests', JSON.stringify(shiftRequests));
-            localStorage.setItem('leaveRequests', JSON.stringify(leaveRequests));
-            localStorage.setItem('notifications', JSON.stringify(notifications));
-            localStorage.setItem('lastDataUpdate', Date.now().toString());
+            // Save current user session separately
             if (currentUser) {
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            }
-            
-            // Save to Firebase (online) - this will trigger real-time updates
-            if (isOnline && database) {
-                database.ref('rosterData').set(data).then(() => {
-                    console.log('✅ Data saved to Firebase - all users will see updates');
-                }).catch(error => {
-                    console.log('Firebase save failed:', error);
+                database.ref('sessions/' + currentUser.id).set({
+                    user: currentUser,
+                    loginTime: currentUser.loginTime
                 });
             }
+            
+            // Save to Firebase only
+            database.ref('rosterData').set(data).then(() => {
+                console.log('✅ Data saved to Firebase successfully');
+            }).catch(error => {
+                console.error('❌ Firebase save failed:', error);
+                alert('❌ Failed to save data. Please check your internet connection.');
+            });
         }
 
         function loadData() {
-            if (isOnline && database) {
-                // Set up real-time listener for Firebase
-                database.ref('rosterData').on('value', (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) {
-                        employees = data.employees || employees;
-                        monthlyRoster = data.monthlyRoster || monthlyRoster;
-                        shiftRequests = data.shiftRequests || [];
-                        leaveRequests = data.leaveRequests || [];
-                        notifications = data.notifications || [];
-                        console.log('✅ Data updated from Firebase, notifications count:', notifications.length);
-                        
-                        // Refresh current view if user is logged in
-                        if (currentUser) {
-                            if (currentUser.role === 'admin') {
-                                loadAdminData();
-                            } else {
-                                loadEmployeeData();
-                                // Update notification badge immediately for employees
-                                updateNotificationBadge();
-                                // If on notifications tab, refresh it
-                                const activeTab = document.querySelector('#employeeDashboard .tab-content.active');
-                                if (activeTab && activeTab.id === 'empNotificationTab') {
-                                    loadEmployeeNotifications();
-                                }
-                            }
-                        }
-                    } else {
-                        loadFromLocalStorage();
-                    }
-                });
-            } else {
-                loadFromLocalStorage();
+            if (!isOnline || !database) {
+                alert('❌ Cannot load data. No internet connection.');
+                return;
             }
             
-            // Always load current user from localStorage (session data)
-            const savedUser = localStorage.getItem('currentUser');
-            if (savedUser) currentUser = JSON.parse(savedUser);
-        }
-        
-        function loadFromLocalStorage() {
-            const savedEmployees = localStorage.getItem('employees');
-            const savedMonthlyRoster = localStorage.getItem('monthlyRoster');
-            const savedShift = localStorage.getItem('shiftRequests');
-            const savedLeave = localStorage.getItem('leaveRequests');
-            const savedNotifications = localStorage.getItem('notifications');
+            // Load main data from Firebase
+            database.ref('rosterData').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    employees = data.employees || employees;
+                    monthlyRoster = data.monthlyRoster || monthlyRoster;
+                    shiftRequests = data.shiftRequests || [];
+                    leaveRequests = data.leaveRequests || [];
+                    notifications = data.notifications || [];
+                    console.log('✅ Data loaded from Firebase, notifications count:', notifications.length);
+                    
+                    // Refresh current view if user is logged in
+                    if (currentUser) {
+                        if (currentUser.role === 'admin') {
+                            loadAdminData();
+                        } else {
+                            loadEmployeeData();
+                            updateNotificationBadge();
+                            const activeTab = document.querySelector('#employeeDashboard .tab-content.active');
+                            if (activeTab && activeTab.id === 'empNotificationTab') {
+                                loadEmployeeNotifications();
+                            }
+                        }
+                    }
+                } else {
+                    console.log('⚠️ No data found in Firebase');
+                }
+            });
             
-            if (savedEmployees) employees = JSON.parse(savedEmployees);
-            if (savedMonthlyRoster) monthlyRoster = JSON.parse(savedMonthlyRoster);
-            if (savedShift) shiftRequests = JSON.parse(savedShift);
-            if (savedLeave) leaveRequests = JSON.parse(savedLeave);
-            if (savedNotifications) notifications = JSON.parse(savedNotifications);
+            // Load current user session
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionId = urlParams.get('session');
+            if (sessionId) {
+                database.ref('sessions/' + sessionId).once('value', (snapshot) => {
+                    const sessionData = snapshot.val();
+                    if (sessionData && sessionData.user) {
+                        currentUser = sessionData.user;
+                        console.log('✅ Session restored for:', currentUser.name);
+                    }
+                });
+            }
         }
 
         // Session Management Functions
@@ -2230,105 +2207,7 @@
         document.addEventListener('keypress', resetSessionTimer);
         document.addEventListener('scroll', resetSessionTimer);
 
-        // Push Notification Functions
-        async function initializePushNotifications() {
-            if (!messaging) return;
-            
-            try {
-                // Request permission
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    console.log('Notification permission granted');
-                    
-                    // Get FCM token
-                    const token = await messaging.getToken({
-                        vapidKey: 'YOUR_VAPID_KEY_HERE' // Get from Firebase Console
-                    });
-                    
-                    if (token) {
-                        console.log('FCM Token:', token);
-                        // Save token to user profile
-                        if (currentUser) {
-                            currentUser.fcmToken = token;
-                            saveData();
-                        }
-                    }
-                } else {
-                    console.log('Notification permission denied');
-                }
-                
-                // Handle foreground messages
-                messaging.onMessage((payload) => {
-                    console.log('Foreground message:', payload);
-                    showNotificationPopup(payload.notification.title, payload.notification.body);
-                });
-                
-            } catch (error) {
-                console.error('Error initializing push notifications:', error);
-            }
-        }
-        
-        function showNotificationPopup(title, body) {
-            // Create notification popup
-            const popup = document.createElement('div');
-            popup.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: #fff;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                padding: 15px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 10000;
-                max-width: 300px;
-                animation: slideIn 0.3s ease;
-            `;
-            
-            popup.innerHTML = `
-                <div style="font-weight: bold; margin-bottom: 5px;">${title}</div>
-                <div style="color: #666;">${body}</div>
-                <button onclick="this.parentElement.remove()" style="position: absolute; top: 5px; right: 5px; border: none; background: none; font-size: 18px; cursor: pointer;">&times;</button>
-            `;
-            
-            document.body.appendChild(popup);
-            
-            // Auto remove after 5 seconds
-            setTimeout(() => {
-                if (popup.parentElement) {
-                    popup.remove();
-                }
-            }, 5000);
-        }
-        
-        async function sendPushNotification(title, body, targetTokens = null) {
-            if (!messaging) return;
-            
-            try {
-                // This would typically be done on your server
-                // For demo purposes, we'll show how to structure the request
-                const notificationData = {
-                    notification: {
-                        title: title,
-                        body: body,
-                        icon: '/favicon.ico'
-                    },
-                    tokens: targetTokens || getAllFCMTokens()
-                };
-                
-                console.log('Would send notification:', notificationData);
-                // In production, send this to your server endpoint
-                
-            } catch (error) {
-                console.error('Error sending push notification:', error);
-            }
-        }
-        
-        function getAllFCMTokens() {
-            return employees
-                .filter(emp => emp.fcmToken)
-                .map(emp => emp.fcmToken);
-        }
+
 
     </script>
 </body>
