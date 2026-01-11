@@ -1165,43 +1165,36 @@
         }
 
         function openShiftModal(day = null) {
-            console.log('Opening shift modal...');
-            
-            // Populate employee dropdown immediately
-            const dropdown = document.getElementById('shiftWithEmp');
-            console.log('Dropdown element:', dropdown);
-            
-            if (dropdown) {
-                // Clear existing options
-                dropdown.innerHTML = '';
-                
-                // Add default option
-                const defaultOption = document.createElement('option');
-                defaultOption.value = '';
-                defaultOption.textContent = 'Select Employee';
-                dropdown.appendChild(defaultOption);
-                
-                // Get all other employees except current user
-                const otherEmployees = employees.filter(emp => 
-                    emp.id !== currentUser.id && 
-                    emp.role === 'employee'
-                );
-                
-                console.log('Other employees:', otherEmployees);
-                
-                // Add employee options
-                otherEmployees.forEach(emp => {
-                    const option = document.createElement('option');
-                    option.value = emp.id;
-                    option.textContent = `${emp.id} - ${emp.name}`;
-                    dropdown.appendChild(option);
-                });
-                
-                console.log('Dropdown populated with', dropdown.options.length, 'options');
-            }
-            
-            // Show the modal
+            // Show the modal first
             document.getElementById('shiftModal').style.display = 'block';
+            
+            // Wait a moment for modal to render, then populate dropdown
+            setTimeout(() => {
+                const dropdown = document.getElementById('shiftWithEmp');
+                if (dropdown) {
+                    // Clear and populate dropdown
+                    dropdown.innerHTML = '<option value="">Select Employee</option>';
+                    
+                    // Get all other employees except current user
+                    const otherEmployees = employees.filter(emp => 
+                        emp.id !== currentUser.id && 
+                        emp.role === 'employee'
+                    );
+                    
+                    // Add each employee as an option
+                    otherEmployees.forEach(emp => {
+                        const option = document.createElement('option');
+                        option.value = emp.id;
+                        option.textContent = `${emp.id} - ${emp.name}`;
+                        dropdown.appendChild(option);
+                    });
+                    
+                    // Force refresh the dropdown
+                    dropdown.style.display = 'none';
+                    dropdown.offsetHeight; // Trigger reflow
+                    dropdown.style.display = 'block';
+                }
+            }, 100);
         }
 
         function updateExchangeShift() {
