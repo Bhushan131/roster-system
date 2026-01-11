@@ -1597,9 +1597,10 @@
                             monthlyRoster[employeeId] = {};
                             
                             // Process shift data for this employee (skip first two columns: ID and Name)
-                            for (let colIndex = 2; colIndex < row.length && colIndex <= 33; colIndex++) {
+                            for (let colIndex = 2; colIndex < row.length && colIndex <= 32; colIndex++) {
                                 const shiftValue = row[colIndex]?.toString().trim() || 'N/A';
-                                monthlyRoster[employeeId][`day${colIndex - 1}`] = shiftValue;
+                                const dayNumber = colIndex - 1; // Column 2 = day1, Column 3 = day2, etc.
+                                monthlyRoster[employeeId][`day${dayNumber}`] = shiftValue;
                             }
                             
                             processedEmployees++;
