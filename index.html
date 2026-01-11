@@ -874,6 +874,9 @@
             // Auto-calculate leave days
             document.getElementById('leaveFromDate').addEventListener('change', calculateLeaveDays);
             document.getElementById('leaveToDate').addEventListener('change', calculateLeaveDays);
+            
+            // Update exchange shift when date or employee changes
+            document.getElementById('shiftDate').addEventListener('change', updateExchangeShift);
         }
         
         function calculateLeaveDays() {
@@ -1165,50 +1168,62 @@
         }
 
         function openShiftModal(day = null) {
-            // Show the modal first
+            // Clear form first
+            document.getElementById('shiftForm').reset();
+            document.getElementById('exchangeShiftGroup').style.display = 'none';
+            
+            // Show the modal
             document.getElementById('shiftModal').style.display = 'block';
             
-            // Wait a moment for modal to render, then populate dropdown
-            setTimeout(() => {
-                const dropdown = document.getElementById('shiftWithEmp');
-                if (dropdown) {
-                    // Clear and populate dropdown
-                    dropdown.innerHTML = '<option value="">Select Employee</option>';
-                    
-                    // Get all other employees except current user
-                    const otherEmployees = employees.filter(emp => 
-                        emp.id !== currentUser.id && 
-                        emp.role === 'employee'
-                    );
-                    
-                    // Add each employee as an option
-                    otherEmployees.forEach(emp => {
-                        const option = document.createElement('option');
-                        option.value = emp.id;
-                        option.textContent = `${emp.id} - ${emp.name}`;
-                        dropdown.appendChild(option);
-                    });
-                    
-                    // Force refresh the dropdown
-                    dropdown.style.display = 'none';
-                    dropdown.offsetHeight; // Trigger reflow
-                    dropdown.style.display = 'block';
-                }
-            }, 100);
+            // Populate employee dropdown immediately
+            const dropdown = document.getElementById('shiftWithEmp');
+            if (dropdown) {
+                // Clear existing options
+                dropdown.innerHTML = '<option value="">Select Employee</option>';
+                
+                // Get all other employees except current user
+                const otherEmployees = employees.filter(emp => 
+                    emp.id !== currentUser.id && 
+                    emp.role === 'employee'
+                );
+                
+                console.log('Populating dropdown with employees:', otherEmployees);
+                
+                // Add each employee as an option
+                otherEmployees.forEach(emp => {
+                    const option = document.createElement('option');
+                    option.value = emp.id;
+                    option.textContent = `${emp.id} - ${emp.name}`;
+                    dropdown.appendChild(option);
+                });
+                
+                console.log('Dropdown populated with', dropdown.options.length - 1, 'employees');
+            }
         }
 
         function updateExchangeShift() {
             const withEmpId = document.getElementById('shiftWithEmp').value;
-            const day = document.getElementById('shiftRosterId').value;
+            const shiftDate = document.getElementById('shiftDate').value;
             const exchangeShiftGroup = document.getElementById('exchangeShiftGroup');
             const theirShiftInput = document.getElementById('shiftTheirShift');
             
-            if (withEmpId && day) {
+            if (withEmpId && shiftDate) {
+                // Find the employee
                 const withEmp = employees.find(e => e.id === withEmpId);
-                if (withEmp && monthlyRoster[withEmp.name]) {
-                    const theirShift = monthlyRoster[withEmp.name][`day${day}`] || 'Not Assigned';
-                    theirShiftInput.value = theirShift;
-                    exchangeShiftGroup.style.display = 'block';
+                if (withEmp) {
+                    // Get the day number from the date
+                    const date = new Date(shiftDate);
+                    const dayOfMonth = date.getDate();
+                    
+                    // Check if employee has roster data
+                    if (monthlyRoster[withEmp.name]) {
+                        const theirShift = monthlyRoster[withEmp.name][`day${dayOfMonth}`] || 'Not Assigned';
+                        theirShiftInput.value = theirShift;
+                        exchangeShiftGroup.style.display = 'block';
+                    } else {
+                        theirShiftInput.value = 'No roster data';
+                        exchangeShiftGroup.style.display = 'block';
+                    }
                 } else {
                     exchangeShiftGroup.style.display = 'none';
                 }
@@ -1219,23 +1234,32 @@
 
         function handleShiftSubmit(e) {
             e.preventDefault();
-            const day = document.getElementById('shiftRosterId').value;
             const withEmpId = document.getElementById('shiftWithEmp').value;
             const shiftDate = document.getElementById('shiftDate').value;
             const myShift = document.getElementById('shiftMyShift').value;
             const theirShift = document.getElementById('shiftTheirShift').value;
             const toShift = document.getElementById('addShift').value;
             
+            // Validation
+            if (!withEmpId || !shiftDate || !myShift || !toShift) {
+                alert('❌ Please fill in all required fields!');
+                return;
+            }
+            
+            // Get the day number from the date
+            const date = new Date(shiftDate);
+            const dayOfMonth = date.getDate();
+            
             const request = {
                 id: Date.now(),
                 fromEmpId: currentUser.id,
                 fromEmpName: currentUser.name,
                 date: shiftDate,
-                day: day,
+                day: dayOfMonth,
                 myShift: myShift,
                 withEmpId: withEmpId,
                 withEmpName: employees.find(e => e.id === withEmpId)?.name || 'Unknown',
-                theirShift: theirShift,
+                theirShift: theirShift || 'Not specified',
                 toShift: toShift,
                 status: 'pending_employee',
                 employeeResponse: null,
